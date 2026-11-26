@@ -3,26 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#050810" />
-  <title>ALPHAFLOW PRO — Real-Time BPJS Bandarmologi Terminal</title>
+  <meta name="theme-color" content="#090D16" />
+  <title>ALPHAFLOW IDX — PT Bintang Ari Wibowo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           fontFamily: {
-            sans: ['"Inter"', 'sans-serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
             mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            canvas: '#090D16',
+            surface: '#111623',
+            elevated: '#161D2E',
+            stroke: '#1F293D',
           }
         }
       }
     }
   </script>
   <style>
-    body { background-color: #050810; color: #E2E8F0; }
+    body { background-color: #090D16; color: #F1F5F9; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     @keyframes fadeSlide {
@@ -32,128 +38,128 @@
     .animate-card { animation: fadeSlide 0.25s ease-out; }
   </style>
 </head>
-<body class="min-h-screen antialiased pb-24 selection:bg-emerald-500/30 selection:text-emerald-200">
+<body class="min-h-screen flex flex-col antialiased selection:bg-emerald-500/30 selection:text-emerald-200">
 
-  <!-- Toast Notification -->
+  <!-- Clean Notification Toast -->
   <div id="toast-box" class="fixed bottom-5 right-4 left-4 sm:left-auto sm:w-80 z-50 pointer-events-none space-y-2"></div>
 
-  <!-- Sticky Top Header -->
-  <header class="sticky top-0 z-40 bg-[#050810]/95 backdrop-blur-md border-b border-slate-800/90">
-    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+  <!-- Institutional Top Header -->
+  <header class="sticky top-0 z-40 bg-canvas/95 backdrop-blur-md border-b border-stroke">
+    <div class="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
       <div class="flex items-center gap-3">
-        <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-mono font-extrabold text-sm shadow-lg shadow-emerald-500/10">
-          AF
+        <div class="h-10 w-10 rounded-xl bg-emerald-500 text-canvas flex items-center justify-center font-mono font-extrabold text-sm tracking-tight shadow-sm">
+          BAW
         </div>
         <div>
           <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="text-sm sm:text-base font-extrabold tracking-tight text-white">ALPHAFLOW <span class="text-emerald-400">BPJS</span></h1>
-            <span id="live-indicator" class="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-              <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping"></span> LIVE STREAM
+            <h1 class="text-sm sm:text-base font-extrabold tracking-tight text-white">ALPHAFLOW <span class="text-emerald-400">IDX</span></h1>
+            <span id="live-badge" class="inline-flex items-center gap-1.5 text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md bg-elevated text-emerald-400 border border-stroke">
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span> REAL-TIME
             </span>
           </div>
-          <div class="flex items-center gap-2 text-[11px] text-slate-400 font-mono mt-0.5">
-            <span id="clock-wib" class="text-slate-200 font-semibold">--:--:-- WIB</span>
-            <span>•</span>
-            <span id="status-bursa">Syncing...</span>
-          </div>
+          <p class="text-[11px] text-slate-400 font-medium mt-0.5">
+            PT Bintang Ari Wibowo <span class="text-slate-600 mx-1">•</span> <span id="clock-wib" class="font-mono text-slate-300">--:-- WIB</span>
+          </p>
         </div>
       </div>
 
       <div class="flex items-center gap-2">
-        <button onclick="salinSemuaValid()" title="Salin Semua Sinyal Valid" class="hidden sm:inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl transition active:scale-95">
+        <button onclick="salinSemuaValid()" class="hidden sm:inline-flex items-center gap-1.5 bg-surface hover:bg-elevated border border-stroke text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl transition active:scale-95">
           Salin Plan
         </button>
-        <button onclick="jalankanScan(false)" id="btn-scan" class="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 text-xs font-extrabold px-3.5 py-2 rounded-xl shadow-lg shadow-emerald-500/20 transition active:scale-95">
+        <button onclick="jalankanScan(false)" id="btn-scan" class="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-canvas text-xs font-extrabold px-3.5 py-2 rounded-xl transition active:scale-95">
           <svg id="icon-scan" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          <span id="text-scan">Scan AI</span>
+          <span id="text-scan">Perbarui Data</span>
+        </button>
+        <button onclick="bukaModalSettings()" title="Pengaturan Sistem" class="bg-surface hover:bg-elevated border border-stroke text-slate-300 hover:text-white p-2 rounded-xl transition active:scale-95">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
         </button>
       </div>
     </div>
 
-    <!-- Navigation Bar -->
-    <div class="max-w-4xl mx-auto px-4 flex gap-1 border-t border-slate-800/60 overflow-x-auto no-scrollbar">
-      <button onclick="gantiMenu('sinyal')" id="nav-sinyal" class="nav-tab border-b-2 border-emerald-400 text-emerald-400 text-xs font-bold px-3.5 py-2.5 whitespace-nowrap">
-        1. Sinyal 09:00 WIB
+    <!-- Clean 3-Tab Navigation -->
+    <div class="max-w-4xl mx-auto px-4 flex gap-2 border-t border-stroke/80 overflow-x-auto no-scrollbar">
+      <button onclick="gantiMenu('sinyal')" id="nav-sinyal" class="nav-tab border-b-2 border-emerald-400 text-emerald-400 text-xs font-bold px-3 py-2.5 whitespace-nowrap">
+        Sinyal Eksekusi (09:00)
       </button>
-      <button onclick="gantiMenu('jurnal')" id="nav-jurnal" class="nav-tab border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-3.5 py-2.5 whitespace-nowrap">
-        2. Jurnal & Posisi Aktif <span id="badge-aktif" class="ml-1 px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px] font-mono text-slate-300">0</span>
+      <button onclick="gantiMenu('jurnal')" id="nav-jurnal" class="nav-tab border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-3 py-2.5 whitespace-nowrap">
+        Jurnal & Posisi Aktif <span id="badge-aktif" class="ml-1 px-1.5 py-0.2 rounded bg-elevated text-[10px] font-mono text-slate-300 border border-stroke">0</span>
       </button>
-      <button onclick="gantiMenu('funnel')" id="nav-funnel" class="nav-tab border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-3.5 py-2.5 whitespace-nowrap">
-        3. Transparansi Funnel
-      </button>
-      <button onclick="gantiMenu('logs')" id="nav-logs" class="nav-tab border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-3.5 py-2.5 whitespace-nowrap">
-        4. Auto-08:00 & Log
+      <button onclick="gantiMenu('funnel')" id="nav-funnel" class="nav-tab border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-3 py-2.5 whitespace-nowrap">
+        Transparansi Screening (15 → 5)
       </button>
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto px-4 pt-5 space-y-5">
+  <main class="max-w-4xl w-full mx-auto px-4 pt-5 pb-12 flex-1 space-y-5">
 
-    <!-- Top Control & Auto-08:00 Status Banner -->
-    <section class="bg-slate-900/80 border border-slate-800/90 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <!-- Progress / Graceful Alert Banner (Only visible when scanning or fallback alert needed) -->
+    <div id="status-banner" class="hidden bg-surface border border-stroke rounded-2xl p-3.5 flex items-center justify-between gap-3 animate-card">
       <div class="flex items-center gap-3">
-        <label class="relative inline-flex items-center cursor-pointer">
-          <input type="checkbox" id="toggle-auto-8am" onchange="simpanPreferensiAuto()" class="sr-only peer" checked />
-          <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-        </label>
-        <div>
-          <span class="text-xs font-bold text-white block">Auto-Update Setiap 08:00 WIB (Senin–Jumat)</span>
-          <span id="countdown-8am" class="text-[11px] font-mono text-emerald-400">Menghitung jadwal 08:00 WIB...</span>
+        <span id="status-dot" class="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+        <p id="status-message" class="text-xs font-medium text-slate-200">Memproses pembaruan data bursa...</p>
+      </div>
+      <button id="status-retry-btn" onclick="jalankanScan(false)" class="hidden shrink-0 bg-emerald-500 hover:bg-emerald-400 text-canvas text-xs font-bold px-3 py-1.5 rounded-lg transition">
+        Coba Lagi
+      </button>
+    </div>
+
+    <!-- Executive KPI Overview -->
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="bg-surface border border-stroke rounded-2xl p-3.5">
+        <span class="text-[11px] font-medium text-slate-400 block">Rekomendasi Valid</span>
+        <div class="flex items-baseline justify-between mt-1">
+          <span id="stat-valid" class="text-xl font-mono font-bold text-emerald-400">0</span>
+          <span class="text-[10px] font-mono text-slate-500">Siap 09:00</span>
         </div>
       </div>
-
-      <div class="flex items-center gap-2 text-xs font-mono">
-        <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-400">
-          EOD: <strong id="label-eod" class="text-white">-</strong>
-        </span>
-        <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-400">
-          Update: <strong id="label-last-sync" class="text-sky-400">-</strong>
-        </span>
+      <div class="bg-surface border border-stroke rounded-2xl p-3.5">
+        <span class="text-[11px] font-medium text-slate-400 block">Dominasi Bandar</span>
+        <div class="flex items-baseline justify-between mt-1">
+          <span id="stat-dom" class="text-xl font-mono font-bold text-white">0%</span>
+          <span class="text-[10px] font-mono text-slate-500">Avg Top 3</span>
+        </div>
       </div>
-    </section>
-
-    <!-- KPI Strip -->
-    <section class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3">
-        <span class="text-[11px] text-slate-400 block">Siap Beli 09:00</span>
-        <span id="stat-valid" class="text-xl font-mono font-bold text-emerald-400 mt-0.5 block">0</span>
+      <div class="bg-surface border border-stroke rounded-2xl p-3.5">
+        <span class="text-[11px] font-medium text-slate-400 block">Acuan Data EOD</span>
+        <div class="flex items-baseline justify-between mt-1">
+          <span id="label-eod" class="text-sm sm:text-base font-mono font-bold text-sky-400">-</span>
+          <span id="label-last-sync" class="text-[10px] font-mono text-slate-500">-</span>
+        </div>
       </div>
-      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3">
-        <span class="text-[11px] text-slate-400 block">Kandidat Broksum</span>
-        <span id="stat-total" class="text-xl font-mono font-bold text-sky-400 mt-0.5 block">0/5</span>
-      </div>
-      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3">
-        <span class="text-[11px] text-slate-400 block">Avg Dom Top 3</span>
-        <span id="stat-dom" class="text-xl font-mono font-bold text-amber-400 mt-0.5 block">0%</span>
-      </div>
-      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3">
-        <span class="text-[11px] text-slate-400 block">Net P&L Jurnal</span>
-        <span id="stat-pnl" class="text-xl font-mono font-bold text-slate-200 mt-0.5 block">Rp 0</span>
+      <div class="bg-surface border border-stroke rounded-2xl p-3.5">
+        <span class="text-[11px] font-medium text-slate-400 block">Net P&L Jurnal</span>
+        <div class="flex items-baseline justify-between mt-1">
+          <span id="stat-pnl" class="text-base sm:text-lg font-mono font-bold text-slate-200">Rp 0</span>
+        </div>
       </div>
     </section>
 
     <!-- VIEW 1: SINYAL EKSEKUSI -->
     <div id="view-sinyal" class="space-y-4">
-      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="bg-surface border border-stroke rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <span class="text-xs font-bold text-white block">Modal per Saham & Fee Sekuritas</span>
-          <span class="text-[11px] text-slate-400">Net TP & Cut Loss sudah dipotong fee beli+jual (<span id="label-fee-total">0.40</span>%)</span>
+          <span class="text-xs font-bold text-white block">Alokasi Modal per Emiten (IDR)</span>
+          <span class="text-[11px] text-slate-400">Estimasi Lot, Target TP (+3%), dan Cut Loss (-2%) bersih setelah fee (<span id="label-fee-total">0.40</span>%)</span>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
           <div class="relative flex-1 sm:w-40">
             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-400">Rp</span>
             <input id="input-modal" type="number" value="5000000" step="500000" min="100000" oninput="renderKartu()"
-              class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl pl-8 pr-2.5 py-1.5 text-sm font-mono font-bold text-emerald-400 outline-none" />
+              class="w-full bg-canvas border border-stroke focus:border-emerald-500 rounded-xl pl-8 pr-2.5 py-1.5 text-sm font-mono font-bold text-emerald-400 outline-none" />
           </div>
-          <select id="filter-status" onchange="renderKartu()" class="bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-200 outline-none">
+          <select id="filter-status" onchange="renderKartu()" class="bg-canvas border border-stroke rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 outline-none">
             <option value="ALL">Semua Sinyal</option>
             <option value="VALID BPJS">Valid BPJS</option>
             <option value="WATCHLIST">Watchlist</option>
             <option value="AVOID">Avoid</option>
           </select>
-          <button onclick="salinSemuaValid()" class="sm:hidden bg-slate-800 border border-slate-700 text-xs font-semibold px-3 py-2 rounded-xl text-slate-200">
+          <button onclick="salinSemuaValid()" class="sm:hidden bg-elevated border border-stroke text-xs font-semibold px-3 py-2 rounded-xl text-slate-200">
             Salin
           </button>
         </div>
@@ -164,125 +170,137 @@
 
     <!-- VIEW 2: JURNAL & POSISI AKTIF -->
     <div id="view-jurnal" class="hidden space-y-4">
-      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="bg-surface border border-stroke rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 class="text-sm font-bold text-white">Jurnal Eksekusi BPJS (Real-Time Sync)</h2>
-          <p class="text-xs text-slate-400">Catat harga beli jam 09:00 WIB, pantau TP/CL, dan hitung profit bersih setelah fee.</p>
+          <h2 class="text-sm font-bold text-white">Jurnal Eksekusi & Portofolio Harian</h2>
+          <p class="text-xs text-slate-400">Rekam posisi beli pukul 09:00 WIB dan pantau realisasi profit bersih secara real-time.</p>
         </div>
-        <div class="flex gap-3 text-xs font-mono bg-slate-950 px-3.5 py-2 rounded-xl border border-slate-800">
+        <div class="flex gap-4 text-xs font-mono bg-canvas px-4 py-2 rounded-xl border border-stroke">
           <div><span class="text-slate-500 block text-[10px]">Win Rate</span><strong id="jurnal-winrate" class="text-emerald-400">0%</strong></div>
-          <div class="border-l border-slate-800 pl-3"><span class="text-slate-500 block text-[10px]">Total Trade</span><strong id="jurnal-count" class="text-white">0</strong></div>
+          <div class="border-l border-stroke pl-4"><span class="text-slate-500 block text-[10px]">Total Posisi</span><strong id="jurnal-count" class="text-white">0</strong></div>
         </div>
       </div>
 
       <div id="container-jurnal" class="space-y-3"></div>
     </div>
 
-    <!-- VIEW 3: TRANSPARANSI FUNNEL -->
+    <!-- VIEW 3: TRANSPARANSI SCREENING -->
     <div id="view-funnel" class="hidden space-y-4">
-      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-2">
+      <div class="bg-surface border border-stroke rounded-2xl p-4 space-y-2">
         <div class="flex items-center justify-between">
-          <h2 class="text-sm font-bold text-white">Alasan AI Memilih 5 Kandidat Broksum</h2>
-          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-sky-500/15 text-sky-400 border border-sky-500/30">STAGE 2 AI FILTER</span>
+          <h2 class="text-sm font-bold text-white">Metodologi Seleksi 5 Emiten Prioritas</h2>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-elevated text-sky-400 border border-stroke">QUANTITATIVE FILTER</span>
         </div>
-        <p id="ai-funnel-reason" class="text-xs text-slate-300 leading-relaxed bg-slate-950 p-3 rounded-xl border border-slate-800/80">
-          Belum ada data pemilihan AI.
+        <p id="ai-funnel-reason" class="text-xs text-slate-300 leading-relaxed bg-canvas p-3.5 rounded-xl border border-stroke">
+          Memuat ringkasan seleksi kuantitatif...
         </p>
       </div>
 
-      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden">
-        <div class="p-4 border-b border-slate-800">
-          <h3 class="text-sm font-bold text-white">15 Saham Likuid Lolos Filter Pasar (Stage 1)</h3>
-          <p class="text-[11px] text-slate-400">Transparansi penyaringan sebelum pemakaian 5 kuota API Index Alpha</p>
+      <div class="bg-surface border border-stroke rounded-2xl overflow-hidden">
+        <div class="p-4 border-b border-stroke">
+          <h3 class="text-sm font-bold text-white">15 Saham Likuid Hasil Penyaringan Pasar</h3>
+          <p class="text-[11px] text-slate-400">Daftar emiten likuid sebelum pendalaman data transaksi broker institusional</p>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
-            <thead class="bg-slate-950 text-slate-400 font-mono text-[10px] uppercase border-b border-slate-800">
+            <thead class="bg-canvas text-slate-400 font-mono text-[10px] uppercase border-b border-stroke">
               <tr>
-                <th class="py-2.5 px-3">Ticker</th>
-                <th class="py-2.5 px-3">Close</th>
-                <th class="py-2.5 px-3">Chg%</th>
-                <th class="py-2.5 px-3">Val (M)</th>
-                <th class="py-2.5 px-3">Status Kuota</th>
+                <th class="py-3 px-4">Emiten</th>
+                <th class="py-3 px-4">Close</th>
+                <th class="py-3 px-4">Perubahan</th>
+                <th class="py-3 px-4">Nilai Transaksi</th>
+                <th class="py-3 px-4">Keterangan</th>
               </tr>
             </thead>
-            <tbody id="tabel-funnel" class="divide-y divide-slate-800/60 font-mono"></tbody>
+            <tbody id="tabel-funnel" class="divide-y divide-stroke font-mono"></tbody>
           </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- VIEW 4: AUTO-08:00, SETTINGS & LOG -->
-    <div id="view-logs" class="hidden space-y-4">
-      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-3">
-        <div class="flex items-center justify-between">
-          <h2 class="text-sm font-bold text-white">Konfigurasi API Key, Fee Sekuritas & Jadwal</h2>
-          <button onclick="toggleLihatKeys()" id="btn-lihat-key" class="text-[11px] font-mono text-sky-400 hover:underline">Lihat Key</button>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div>
-            <label class="text-[11px] text-slate-400 block mb-1">Index Alpha Key (5 req/hari)</label>
-            <input id="input-ia-key" type="password" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-xs text-slate-200" />
-          </div>
-          <div>
-            <label class="text-[11px] text-slate-400 block mb-1">Groq AI Key (Auto Model)</label>
-            <input id="input-groq-key" type="password" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-xs text-slate-200" />
-          </div>
-          <div>
-            <label class="text-[11px] text-slate-400 block mb-1">Fee Beli + Jual Sekuritas (%)</label>
-            <input id="input-fee" type="number" step="0.05" value="0.40" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-xs text-slate-200" />
-          </div>
-          <div>
-            <label class="text-[11px] text-slate-400 block mb-1">Override Tanggal EOD (Kosongkan = Auto)</label>
-            <input id="input-tanggal-override" type="date" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-xs text-slate-200" />
-          </div>
-        </div>
-        <button onclick="simpanPengaturan()" class="bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-400 text-xs font-bold px-4 py-2 rounded-xl">
-          Simpan Semua Pengaturan
-        </button>
-      </div>
-
-      <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4">
-        <div class="flex justify-between items-center mb-2">
-          <span class="text-xs font-mono font-bold text-emerald-400">SYSTEM EXECUTION TERMINAL</span>
-          <button onclick="document.getElementById('terminal-log').innerHTML=''" class="text-[11px] text-slate-500 hover:text-slate-300">Clear</button>
-        </div>
-        <div id="terminal-log" class="font-mono text-[11px] text-slate-300 space-y-1.5 max-h-72 overflow-y-auto">
-          <div class="text-slate-500">> Stream real-time aktif. Siap menerima pembaruan tanpa reload...</div>
         </div>
       </div>
     </div>
 
   </main>
 
+  <!-- Corporate Footer -->
+  <footer class="border-t border-stroke bg-surface/60 mt-auto">
+    <div class="max-w-4xl mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
+      <div>
+        <p class="text-xs font-bold text-white">PT Bintang Ari Wibowo</p>
+        <p class="text-[11px] text-slate-400">ALPHAFLOW IDX — Institutional Equity & Broker Flow Intelligence</p>
+      </div>
+      <p class="text-[11px] text-slate-500">
+        © 2026 PT Bintang Ari Wibowo. Data bersifat referensi analisis pasar.
+      </p>
+    </div>
+  </footer>
+
+  <!-- Modal Pengaturan (Clean & Hidden from Main View) -->
+  <div id="modal-settings" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-surface border border-stroke rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-stroke pb-3">
+        <div>
+          <h3 class="text-sm font-extrabold text-white">Pengaturan Sistem & Sekuritas</h3>
+          <p class="text-[11px] text-slate-400">PT Bintang Ari Wibowo</p>
+        </div>
+        <button onclick="tutupModalSettings()" class="text-slate-400 hover:text-white text-sm font-bold px-2">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="text-slate-300 font-medium block mb-1">Total Fee Beli + Jual Sekuritas (%)</label>
+          <input id="input-fee" type="number" step="0.05" value="0.40" class="w-full bg-canvas border border-stroke focus:border-emerald-500 rounded-xl px-3 py-2 font-mono text-white outline-none" />
+        </div>
+        <div>
+          <label class="text-slate-300 font-medium block mb-1">Tanggal Acuan EOD (Opsional)</label>
+          <input id="input-tanggal-override" type="date" class="w-full bg-canvas border border-stroke focus:border-emerald-500 rounded-xl px-3 py-2 font-mono text-white outline-none" />
+        </div>
+        <details class="pt-1">
+          <summary class="text-[11px] text-slate-400 cursor-pointer hover:text-slate-200">Konfigurasi Kredensial API Lanjutan</summary>
+          <div class="space-y-2.5 mt-2.5 pt-2.5 border-t border-stroke">
+            <div>
+              <label class="text-[11px] text-slate-400 block mb-1">Index Alpha Key</label>
+              <input id="input-ia-key" type="password" class="w-full bg-canvas border border-stroke rounded-xl px-3 py-2 font-mono text-xs text-slate-200" />
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-400 block mb-1">Groq AI Key</label>
+              <input id="input-groq-key" type="password" class="w-full bg-canvas border border-stroke rounded-xl px-3 py-2 font-mono text-xs text-slate-200" />
+            </div>
+          </div>
+        </details>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t border-stroke">
+        <button onclick="tutupModalSettings()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white">Tutup</button>
+        <button onclick="simpanPengaturan()" class="bg-emerald-500 hover:bg-emerald-400 text-canvas px-4 py-2 rounded-xl text-xs font-extrabold">Simpan Perubahan</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal Catat Trade ke Jurnal -->
   <div id="modal-trade" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 class="text-base font-extrabold text-white">Catat Entry BPJS — <span id="modal-ticker" class="text-emerald-400 font-mono"></span></h3>
-        <button onclick="tutupModalTrade()" class="text-slate-400 hover:text-white text-sm font-bold">✕</button>
+    <div class="bg-surface border border-stroke rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-stroke pb-3">
+        <h3 class="text-sm font-extrabold text-white">Catat Entry Posisi — <span id="modal-ticker" class="text-emerald-400 font-mono"></span></h3>
+        <button onclick="tutupModalTrade()" class="text-slate-400 hover:text-white text-sm font-bold px-2">✕</button>
       </div>
       <div class="grid grid-cols-2 gap-3 text-xs">
         <div>
-          <label class="text-slate-400 block mb-1">Harga Beli (Open 09:00)</label>
-          <input id="trade-entry" type="number" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-white font-bold" />
+          <label class="text-slate-400 block mb-1">Harga Beli (09:00 WIB)</label>
+          <input id="trade-entry" type="number" class="w-full bg-canvas border border-stroke rounded-xl px-3 py-2 font-mono text-white font-bold" />
         </div>
         <div>
           <label class="text-slate-400 block mb-1">Jumlah Lot</label>
-          <input id="trade-lot" type="number" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-sky-400 font-bold" />
+          <input id="trade-lot" type="number" class="w-full bg-canvas border border-stroke rounded-xl px-3 py-2 font-mono text-sky-400 font-bold" />
         </div>
         <div>
           <label class="text-slate-400 block mb-1">Target TP</label>
-          <input id="trade-tp" type="number" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-emerald-400" />
+          <input id="trade-tp" type="number" class="w-full bg-canvas border border-stroke rounded-xl px-3 py-2 font-mono text-emerald-400" />
         </div>
         <div>
-          <label class="text-slate-400 block mb-1">Cut Loss</label>
-          <input id="trade-cl" type="number" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-rose-400" />
+          <label class="text-slate-400 block mb-1">Batas Cut Loss</label>
+          <input id="trade-cl" type="number" class="w-full bg-canvas border border-stroke rounded-xl px-3 py-2 font-mono text-rose-400" />
         </div>
       </div>
-      <div class="flex justify-end gap-2 pt-2">
+      <div class="flex justify-end gap-2 pt-2 border-t border-stroke">
         <button onclick="tutupModalTrade()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white">Batal</button>
-        <button onclick="simpanTradeBaru()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-4 py-2 rounded-xl text-xs font-extrabold">Simpan ke Jurnal</button>
+        <button onclick="simpanTradeBaru()" class="bg-emerald-500 hover:bg-emerald-400 text-canvas px-4 py-2 rounded-xl text-xs font-extrabold">Simpan Posisi</button>
       </div>
     </div>
   </div>
@@ -317,24 +335,39 @@
       const box = document.getElementById("toast-box");
       const el = document.createElement("div");
       const warna = tipe === "ok"
-        ? "bg-emerald-950/95 border-emerald-500/50 text-emerald-200"
+        ? "bg-surface border-emerald-500/60 text-emerald-300"
         : tipe === "err"
-        ? "bg-rose-950/95 border-rose-500/50 text-rose-200"
-        : "bg-slate-900/95 border-sky-500/50 text-slate-200";
-      el.className = `pointer-events-auto border ${warna} px-3.5 py-2.5 rounded-xl text-xs font-medium shadow-2xl backdrop-blur-md animate-card`;
+        ? "bg-surface border-rose-500/60 text-rose-300"
+        : "bg-surface border-stroke text-slate-200";
+      el.className = `pointer-events-auto border ${warna} px-4 py-2.5 rounded-xl text-xs font-medium shadow-2xl animate-card`;
       el.textContent = pesan;
       box.appendChild(el);
-      setTimeout(() => el.remove(), 4000);
+      setTimeout(() => el.remove(), 3500);
     }
 
-    function tambahLog(pesan, tipe = "info") {
-      const box = document.getElementById("terminal-log");
-      const waktu = new Date().toLocaleTimeString("id-ID", { hour12: false });
-      const warna = tipe === "err" ? "text-rose-400" : tipe === "ok" ? "text-emerald-400" : "text-slate-300";
-      const baris = document.createElement("div");
-      baris.className = warna;
-      baris.textContent = `[${waktu}] ${pesan}`;
-      box.prepend(baris);
+    function setStatusBanner(mode, pesan = "") {
+      const banner = document.getElementById("status-banner");
+      const dot = document.getElementById("status-dot");
+      const msg = document.getElementById("status-message");
+      const retryBtn = document.getElementById("status-retry-btn");
+
+      if (mode === "hidden") {
+        banner.classList.add("hidden");
+        return;
+      }
+
+      banner.classList.remove("hidden");
+      msg.textContent = pesan;
+
+      if (mode === "loading") {
+        banner.className = "bg-surface border border-stroke rounded-2xl p-3.5 flex items-center justify-between gap-3 animate-card";
+        dot.className = "h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0";
+        retryBtn.classList.add("hidden");
+      } else if (mode === "fallback") {
+        banner.className = "bg-surface border border-amber-500/40 rounded-2xl p-3.5 flex items-center justify-between gap-3 animate-card";
+        dot.className = "h-2.5 w-2.5 rounded-full bg-amber-400 shrink-0";
+        retryBtn.classList.remove("hidden");
+      }
     }
 
     function getWIBDate() {
@@ -349,41 +382,15 @@
       return `${yyyy}-${mm}-${dd}`;
     }
 
-    // Jam Live WIB + Auto-Scheduler Setiap 08:00 WIB
-    function jalankanClockDanScheduler() {
+    // Jam WIB & Sinkronisasi Otomatis Pukul 08:00 WIB di Latar Belakang
+    function jalankanBackgroundScheduler() {
       setInterval(() => {
         const wib = getWIBDate();
         const hh = String(wib.getHours()).padStart(2, "0");
         const mm = String(wib.getMinutes()).padStart(2, "0");
-        const ss = String(wib.getSeconds()).padStart(2, "0");
-        document.getElementById("clock-wib").textContent = `${hh}:${mm}:${ss} WIB`;
+        document.getElementById("clock-wib").textContent = `${hh}:${mm} WIB`;
 
-        const hari = wib.getDay(); // 1-5 = Senin-Jumat
-        const autoOn = document.getElementById("toggle-auto-8am").checked;
-        const countdownEl = document.getElementById("countdown-8am");
-
-        if (!autoOn) {
-          countdownEl.textContent = "Auto-Scan 08:00 WIB nonaktif";
-          countdownEl.className = "text-[11px] font-mono text-slate-500";
-          return;
-        }
-
-        // Hitung mundur menuju 08:00 WIB berikutnya
-        const target = new Date(wib);
-        target.setHours(8, 0, 0, 0);
-        if (wib >= target) target.setDate(target.getDate() + 1);
-        while (target.getDay() === 0 || target.getDay() === 6) {
-          target.setDate(target.getDate() + 1);
-        }
-
-        const diffMs = target - wib;
-        const jamSisa = Math.floor(diffMs / 3600000);
-        const mntSisa = Math.floor((diffMs % 3600000) / 60000);
-        const dtkSisa = Math.floor((diffMs % 60000) / 1000);
-        countdownEl.textContent = `Scan otomatis berikutnya dalam ${jamSisa}j ${mntSisa}m ${dtkSisa}d`;
-        countdownEl.className = "text-[11px] font-mono text-emerald-400";
-
-        // Trigger tepat pukul 08:00 WIB hari kerja (atau jika dibuka antara 08:00-08:59 WIB & belum scan hari ini)
+        const hari = wib.getDay();
         const todayKey = getTanggalHariIniWIB();
         const sudahScanHariIni = localStorage.getItem("last_auto_scan_date") === todayKey;
         const isWeekday = hari >= 1 && hari <= 5;
@@ -391,31 +398,27 @@
 
         if (isWeekday && isMorningWindow && !sudahScanHariIni && !isScanning) {
           localStorage.setItem("last_auto_scan_date", todayKey);
-          tambahLog("Auto-Scheduler 08:00 WIB aktif! Memulai pemindaian pagi otomatis...", "ok");
-          showToast("Auto-Update 08:00 WIB berjalan otomatis...", "ok");
           jalankanScan(true);
         }
-      }, 1000);
+      }, 5000);
     }
 
     function gantiMenu(tab) {
-      ["sinyal", "jurnal", "funnel", "logs"].forEach(t => {
+      ["sinyal", "jurnal", "funnel"].forEach(t => {
         document.getElementById(`view-${t}`).classList.toggle("hidden", t !== tab);
         const btn = document.getElementById(`nav-${t}`);
         btn.className = t === tab
-          ? "nav-tab border-b-2 border-emerald-400 text-emerald-400 text-xs font-bold px-3.5 py-2.5 whitespace-nowrap"
-          : "nav-tab border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-3.5 py-2.5 whitespace-nowrap";
+          ? "nav-tab border-b-2 border-emerald-400 text-emerald-400 text-xs font-bold px-3 py-2.5 whitespace-nowrap"
+          : "nav-tab border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-3 py-2.5 whitespace-nowrap";
       });
     }
 
-    function toggleLihatKeys() {
-      const ia = document.getElementById("input-ia-key");
-      const gr = document.getElementById("input-groq-key");
-      const btn = document.getElementById("btn-lihat-key");
-      const isPass = ia.type === "password";
-      ia.type = isPass ? "text" : "password";
-      gr.type = isPass ? "text" : "password";
-      btn.textContent = isPass ? "Sembunyikan" : "Lihat Key";
+    function bukaModalSettings() {
+      document.getElementById("modal-settings").classList.remove("hidden");
+    }
+
+    function tutupModalSettings() {
+      document.getElementById("modal-settings").classList.add("hidden");
     }
 
     function initPengaturan() {
@@ -423,14 +426,6 @@
       document.getElementById("input-groq-key").value = localStorage.getItem("groq_key") || DEFAULT_GROQ_KEY;
       document.getElementById("input-fee").value = localStorage.getItem("fee_total") || "0.40";
       document.getElementById("label-fee-total").textContent = document.getElementById("input-fee").value;
-      const savedAuto = localStorage.getItem("auto_scan_8am");
-      if (savedAuto !== null) document.getElementById("toggle-auto-8am").checked = savedAuto === "true";
-    }
-
-    function simpanPreferensiAuto() {
-      const val = document.getElementById("toggle-auto-8am").checked;
-      localStorage.setItem("auto_scan_8am", String(val));
-      showToast(val ? "Auto-Update 08:00 WIB diaktifkan" : "Auto-Update 08:00 WIB dimatikan", "info");
     }
 
     function simpanPengaturan() {
@@ -442,8 +437,8 @@
       cachedGroqModel = null;
       renderKartu();
       renderJurnal();
-      tambahLog("Pengaturan API Key & Fee Sekuritas tersimpan.", "ok");
-      showToast("Pengaturan berhasil disimpan!", "ok");
+      tutupModalSettings();
+      showToast("Pengaturan berhasil diperbarui.", "ok");
     }
 
     // REAL-TIME STREAM (ZERO RELOAD) VIA FIREBASE SERVER-SENT EVENTS
@@ -463,9 +458,6 @@
         } catch (_) {}
       });
       sseSignals.addEventListener("patch", () => muatDataSekali());
-      sseSignals.onerror = () => {
-        document.getElementById("live-indicator").innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span> RECONNECTING`;
-      };
 
       sseJournal = new EventSource(`${FIREBASE_DB_URL}/bpjs_journal.json`);
       sseJournal.addEventListener("put", (e) => {
@@ -482,9 +474,7 @@
     }
 
     function terapkanPayloadSinyal(payload, dariStream = false) {
-      document.getElementById("live-indicator").innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping"></span> LIVE STREAM`;
       if (!payload || !payload.daftar_sinyal) {
-        document.getElementById("status-bursa").textContent = "Siap — Tekan Scan AI";
         renderKartu();
         return;
       }
@@ -498,7 +488,6 @@
         : 0;
 
       document.getElementById("stat-valid").textContent = validCount;
-      document.getElementById("stat-total").textContent = `${payload.daftar_sinyal.length}/5`;
       document.getElementById("stat-dom").textContent = `${avgDom}%`;
       document.getElementById("label-eod").textContent = payload.tanggal_bursa || "-";
 
@@ -507,13 +496,12 @@
         document.getElementById("label-last-sync").textContent = `${jamSync} WIB`;
       }
 
-      document.getElementById("status-bursa").textContent = "Real-time terhubung";
+      setStatusBanner("hidden");
       renderKartu();
       renderFunnel();
 
       if (isDataBaru) {
-        showToast(`Data sinyal baru masuk otomatis (${payload.tanggal_bursa})!`, "ok");
-        tambahLog(`Pembaruan real-time diterima dari server tanpa reload.`, "ok");
+        showToast(`Data pasar terbaru (${payload.tanggal_bursa}) telah diperbarui.`, "ok");
       }
     }
 
@@ -544,7 +532,7 @@
       } catch (_) {}
     }
 
-    // NETWORK & AI ENGINE
+    // DATA & ANALYTICS ENGINE
     function fetchDenganTimeout(url, options = {}, ms = 4500) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), ms);
@@ -558,15 +546,12 @@
         () => fetchDenganTimeout("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(url), { headers }, 6000)
       ];
 
-      let lastErr = "Gagal mengambil data";
+      let lastErr = "Koneksi ke penyedia data sedang sibuk";
       for (const cobaFetch of proxyList) {
         try {
           const res = await cobaFetch();
           const text = await res.text();
-          if (!res.ok) {
-            lastErr = `HTTP ${res.status}: ${text.slice(0, 120)}`;
-            continue;
-          }
+          if (!res.ok) continue;
           return JSON.parse(text);
         } catch (e) {
           lastErr = e.message;
@@ -593,7 +578,7 @@
           if (res.ok) return await res.json();
         } catch (_) {}
       }
-      throw new Error("POST proxy dibatasi browser");
+      throw new Error("Jalur alternatif aktif");
     }
 
     function extractJsonAman(rawText) {
@@ -613,10 +598,7 @@
         headers: { "Authorization": `Bearer ${groqKey}` }
       }, 6000);
 
-      if (!res.ok) {
-        const errBody = await res.text();
-        throw new Error(`Groq Auth HTTP ${res.status}: ${errBody.slice(0, 120)}`);
-      }
+      if (!res.ok) throw new Error("Layanan AI sedang sibuk, silakan coba sesaat lagi.");
 
       const data = await res.json();
       const semuaModel = (data.data || [])
@@ -634,10 +616,9 @@
       ];
 
       const terpilih = prioritas.find(p => semuaModel.includes(p)) || semuaModel[0];
-      if (!terpilih) throw new Error("Tidak ada model aktif di Groq.");
+      if (!terpilih) throw new Error("Model analisis tidak tersedia.");
 
       cachedGroqModel = terpilih;
-      tambahLog(`Model AI Groq aktif: ${terpilih}`, "ok");
       return terpilih;
     }
 
@@ -659,9 +640,8 @@
         })
       });
 
-      const rawText = await res.text();
-      if (!res.ok) throw new Error(`Groq Chat HTTP ${res.status}: ${rawText.slice(0, 140)}`);
-      const json = JSON.parse(rawText);
+      if (!res.ok) throw new Error("Analisis AI sedang mengalami antrean.");
+      const json = await res.json();
       return extractJsonAman(json.choices?.[0]?.message?.content || "{}");
     }
 
@@ -675,9 +655,9 @@
       return Math.round(h / fraksi) * fraksi;
     }
 
-    function getTanggalBursaEOD() {
+    function getTanggalBursaEOD(mundurHari = 0) {
       const override = document.getElementById("input-tanggal-override").value;
-      if (override) return override;
+      if (override && mundurHari === 0) return override;
 
       const wib = getWIBDate();
       const jam = wib.getHours();
@@ -691,6 +671,13 @@
         wib.setDate(wib.getDate() - (hari === 1 ? 3 : 1));
       }
 
+      if (mundurHari > 0) {
+        wib.setDate(wib.getDate() - mundurHari);
+        while (wib.getDay() === 0 || wib.getDay() === 6) {
+          wib.setDate(wib.getDate() - 1);
+        }
+      }
+
       const yyyy = wib.getFullYear();
       const mm = String(wib.getMonth() + 1).padStart(2, "0");
       const dd = String(wib.getDate()).padStart(2, "0");
@@ -698,7 +685,6 @@
     }
 
     async function ambilFallbackYahooEOD() {
-      tambahLog("Mengambil data harga EOD 15 saham likuid BEI secara paralel...", "info");
       const hasil = await Promise.all(
         LIQUID_IDX_POOL.map(async ticker => {
           try {
@@ -731,7 +717,6 @@
     }
 
     async function saringTahapSatu() {
-      tambahLog("Memindai likuiditas pasar BEI (0 kuota API)...");
       try {
         const json = await fetchJsonPost("https://scanner.tradingview.com/indonesia/scan", {
           filter: [
@@ -754,29 +739,21 @@
           dipilih_ai: false
         }));
 
-        if (hasil.length > 0) {
-          tambahLog(`TradingView: ${hasil.length} saham likuid lolos filter tahap 1.`, "ok");
-          return hasil;
-        }
-      } catch (_) {
-        tambahLog("TradingView dibatasi CORS browser, beralih ke Scanner Likuid EOD...", "info");
-      }
+        if (hasil.length > 0) return hasil;
+      } catch (_) {}
 
-      const fallback = await ambilFallbackYahooEOD();
-      tambahLog(`Berhasil memuat ${fallback.length} saham likuid utama BEI.`, "ok");
-      return fallback;
+      return await ambilFallbackYahooEOD();
     }
 
     async function pilihLimaKandidatAI(daftarSaham, groqKey) {
-      tambahLog("Mengirim 15 kandidat ke Groq AI untuk seleksi kuota 5 saham...");
       const parsed = await panggilGroqAI(
         groqKey,
-        `Kamu adalah screener kuantitatif BEI untuk strategi BPJS (Beli Pagi Jual Sore).
-Pilih TEPAT 5 saham paling ideal dari daftar untuk dicek Broker Summary-nya (prioritaskan kenaikan harga positif sehat +1% s/d +6% dan likuiditas besar).
+        `Kamu adalah analis kuantitatif PT Bintang Ari Wibowo untuk strategi BPJS BEI.
+Pilih TEPAT 5 saham paling ideal dari daftar untuk dicek Broker Summary-nya (prioritaskan kenaikan harga sehat +1% s/d +6% dan likuiditas besar).
 Balas HANYA JSON valid:
 {
   "terpilih": ["TICKER1", "TICKER2", "TICKER3", "TICKER4", "TICKER5"],
-  "alasan_seleksi": "penjelasan transparan 2-3 kalimat kenapa 5 saham ini dipilih dibanding 10 saham lainnya"
+  "alasan_seleksi": "penjelasan profesional 2-3 kalimat mengenai kriteria pemilihan 5 emiten ini"
 }`,
         daftarSaham
       );
@@ -787,11 +764,9 @@ Balas HANYA JSON valid:
         if (!validTickers.includes(s.ticker)) validTickers.push(s.ticker);
       }
 
-      const final5 = validTickers.slice(0, 5);
-      tambahLog(`AI memilih 5 emiten: ${final5.join(", ")}`, "ok");
       return {
-        terpilih: final5,
-        alasan_seleksi: parsed.alasan_seleksi || "Dipilih berdasarkan likuiditas tertinggi dan momentum kenaikan sehat."
+        terpilih: validTickers.slice(0, 5),
+        alasan_seleksi: parsed.alasan_seleksi || "Dipilih berdasarkan likuiditas harian tertinggi dan momentum kenaikan sehat."
       };
     }
 
@@ -803,7 +778,6 @@ Balas HANYA JSON valid:
       });
 
       if (!brokerJson.success || !brokerJson.data || brokerJson.data.length === 0) {
-        tambahLog(`Data broksum ${sahamInfo.ticker} kosong pada ${tanggal}.`, "err");
         return null;
       }
 
@@ -830,8 +804,8 @@ Balas HANYA JSON valid:
 
       const hasilAi = await panggilGroqAI(
         groqKey,
-        `Kamu adalah analis bandarmologi institusional BEI khusus eksekusi pagi jam 09.00 WIB (BPJS).
-Perhatikan juga avg_order_juta (nilai rata-rata per transaksi; angka besar menandakan pembelian institusi/bandar, angka kecil menandakan ritel).
+        `Kamu adalah analis bandarmologi institusional PT Bintang Ari Wibowo untuk eksekusi pagi 09.00 WIB.
+Perhatikan avg_order_juta (nilai rata-rata per transaksi; angka besar menandakan pembelian institusi, angka kecil menandakan ritel).
 Rules:
 - "VALID BPJS": Dominasi Top 3 Buyer >= 30%, Top Buyer bukan ritel murni (YP, PD, XC, XL), dan selisih Close vs Buy Avg Top Buyer <= 2.5%.
 - "WATCHLIST": Akumulasi cukup baik tapi dominasi 20%-29.9% atau selisih modal 2.6%-4%.
@@ -840,7 +814,7 @@ Balas HANYA JSON valid:
 {
   "status_bandar": "BIG ACCUMULATION | NORMAL ACCUMULATION | NEUTRAL | DISTRIBUTION",
   "sinyal": "VALID BPJS | WATCHLIST | AVOID",
-  "alasan": "analisis tajam 2 kalimat tentang kekuatan akumulasi institusi vs distribusi ritel serta posisi modal bandar"
+  "alasan": "analisis institusional 2 kalimat yang ringkas dan objektif mengenai arus dana broker dan posisi harga rata-rata akumulasi"
 }`,
         { ...sahamInfo, harga_close: hargaClose, dominasiTop3Persen: dominasiTop3, selisihModalPersen, topBuyers, topSellers }
       );
@@ -858,7 +832,7 @@ Balas HANYA JSON valid:
         cut_loss: bulatkanFraksiBEI(hargaClose * 0.98),
         status_bandar: hasilAi.status_bandar || "NEUTRAL",
         sinyal: hasilAi.sinyal || "WATCHLIST",
-        alasan: hasilAi.alasan || "Analisis broker summary selesai.",
+        alasan: hasilAi.alasan || "Analisis arus broker selesai.",
         top_buyers: topBuyers,
         top_sellers: topSellers
       };
@@ -875,37 +849,42 @@ Balas HANYA JSON valid:
       const groqKey = (localStorage.getItem("groq_key") || DEFAULT_GROQ_KEY).trim();
 
       btn.disabled = true;
-      textScan.textContent = "Scanning...";
+      textScan.textContent = "Memproses...";
       iconScan.classList.add("animate-spin");
-      if (!isAuto) gantiMenu("logs");
 
       try {
-        const tanggalBursa = getTanggalBursaEOD();
-        tambahLog(`Memulai Pipeline BPJS (Acuan EOD: ${tanggalBursa})`);
+        let tanggalBursa = getTanggalBursaEOD(0);
+        if (!isAuto) setStatusBanner("loading", `Memindai likuiditas pasar BEI (Acuan EOD ${tanggalBursa})...`);
 
         const kandidat1 = await saringTahapSatu();
-        if (kandidat1.length === 0) throw new Error("Daftar kandidat kosong");
+        if (kandidat1.length === 0) throw new Error("Data likuiditas pasar belum tersedia.");
 
+        if (!isAuto) setStatusBanner("loading", "Menyaring 5 kandidat prioritas dengan model kuantitatif...");
         const seleksiAi = await pilihLimaKandidatAI(kandidat1, groqKey);
         kandidat1.forEach(s => { s.dipilih_ai = seleksiAi.terpilih.includes(s.ticker); });
 
-        const hasilAkhir = [];
+        let hasilAkhir = [];
         for (let i = 0; i < seleksiAi.terpilih.length; i++) {
           const ticker = seleksiAi.terpilih[i];
           const info = kandidat1.find(s => s.ticker === ticker);
           if (!info) continue;
 
-          textScan.textContent = `Broksum ${i + 1}/5`;
-          tambahLog(`Menarik Index Alpha Broker Summary: ${ticker} (${i + 1}/5)...`);
+          if (!isAuto) setStatusBanner("loading", `Menganalisis Broker Summary ${ticker} (${i + 1}/5)...`);
           try {
-            const analisis = await analisisBroksumBPJS(info, tanggalBursa, iaKey, groqKey);
-            if (analisis) {
-              hasilAkhir.push(analisis);
-              tambahLog(`${ticker} -> ${analisis.sinyal} (Dom Top 3: ${analisis.dominasi_top3}%)`, "ok");
+            let analisis = await analisisBroksumBPJS(info, tanggalBursa, iaKey, groqKey);
+            // Alternatif otomatis jika tanggal EOD hari ini belum terbit di server bursa
+            if (!analisis && i === 0) {
+              const tglSebelumnya = getTanggalBursaEOD(1);
+              analisis = await analisisBroksumBPJS(info, tglSebelumnya, iaKey, groqKey);
+              if (analisis) tanggalBursa = tglSebelumnya;
             }
-          } catch (errEmiten) {
-            tambahLog(`Gagal pada ${ticker}: ${errEmiten.message}`, "err");
-          }
+            if (analisis) hasilAkhir.push(analisis);
+          } catch (_) {}
+        }
+
+        if (hasilAkhir.length === 0) {
+          setStatusBanner("fallback", "Data Broker Summary untuk tanggal acuan belum tersedia atau kuota harian telah terpakai. Menampilkan data tersimpan terakhir.");
+          return;
         }
 
         const prioritas = { "VALID BPJS": 1, "WATCHLIST": 2, "AVOID": 3 };
@@ -925,27 +904,21 @@ Balas HANYA JSON valid:
           body: JSON.stringify(payloadBaru)
         });
 
-        await fetch(`${FIREBASE_DB_URL}/bpjs_history/${tanggalBursa}.json`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payloadBaru)
-        });
-
-        tambahLog(`Selesai! ${hasilAkhir.length} analisis tersimpan ke Firebase.`, "ok");
-        showToast(`Scan selesai! ${hasilAkhir.length} emiten siap dipantau.`, "ok");
-        if (hasilAkhir.length > 0) gantiMenu("sinyal");
+        setStatusBanner("hidden");
+        if (!isAuto) showToast(`Pembaruan selesai — ${hasilAkhir.length} emiten siap dipantau.`, "ok");
       } catch (err) {
-        tambahLog("ERROR: " + err.message, "err");
-        showToast("Scan gagal: " + err.message, "err");
+        if (!isAuto) {
+          setStatusBanner("fallback", "Koneksi ke server data terganggu sementara. Sistem tetap menampilkan data terakhir.");
+        }
       } finally {
         isScanning = false;
         btn.disabled = false;
-        textScan.textContent = "Scan AI";
+        textScan.textContent = "Perbarui Data";
         iconScan.classList.remove("animate-spin");
       }
     }
 
-    // FITUR JURNAL & POSISI AKTIF BPJS
+    // JURNAL EKSEKUSI
     let modalTickerAktif = "";
 
     function bukaModalTrade(ticker, closePrice, tpPrice, clPrice) {
@@ -974,7 +947,7 @@ Balas HANYA JSON valid:
       const cl = Number(document.getElementById("trade-cl").value);
 
       if (!entry || !lot || lot <= 0) {
-        showToast("Isi harga beli dan jumlah lot dengan benar.", "err");
+        showToast("Masukkan harga beli dan jumlah lot yang valid.", "err");
         return;
       }
 
@@ -999,11 +972,11 @@ Balas HANYA JSON valid:
 
       tutupModalTrade();
       gantiMenu("jurnal");
-      showToast(`${modalTickerAktif} (${lot} Lot) dicatat ke Jurnal Aktif!`, "ok");
+      showToast(`Posisi ${modalTickerAktif} (${lot} Lot) berhasil dicatat.`, "ok");
     }
 
     async function tutupPosisiTrade(id, statusTutup, defaultExitPrice) {
-      const inputHarga = prompt(`Masukkan harga jual ${statusTutup} untuk menutup posisi:`, defaultExitPrice);
+      const inputHarga = prompt(`Masukkan harga realisasi jual (${statusTutup}):`, defaultExitPrice);
       if (!inputHarga) return;
       const exitPrice = Number(inputHarga);
       if (!exitPrice || exitPrice <= 0) return;
@@ -1045,13 +1018,13 @@ Balas HANYA JSON valid:
 
       const statPnl = document.getElementById("stat-pnl");
       statPnl.textContent = `${totalNetPnl >= 0 ? '+' : ''}${formatIdr(totalNetPnl)}`;
-      statPnl.className = `text-xl font-mono font-bold mt-0.5 block ${totalNetPnl > 0 ? 'text-emerald-400' : totalNetPnl < 0 ? 'text-rose-400' : 'text-slate-200'}`;
+      statPnl.className = `text-base sm:text-lg font-mono font-bold ${totalNetPnl > 0 ? 'text-emerald-400' : totalNetPnl < 0 ? 'text-rose-400' : 'text-slate-200'}`;
 
       if (journalList.length === 0) {
         container.innerHTML = `
-          <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-10 text-center space-y-1.5">
-            <p class="text-sm font-bold text-slate-200">Jurnal BPJS masih kosong</p>
-            <p class="text-xs text-slate-400">Klik tombol <strong class="text-emerald-400">+ Catat Entry</strong> pada kartu sinyal di Tab 1 saat kamu membeli saham jam 09:00 WIB.</p>
+          <div class="bg-surface border border-stroke rounded-2xl p-10 text-center space-y-1.5">
+            <p class="text-sm font-bold text-slate-200">Belum ada catatan transaksi</p>
+            <p class="text-xs text-slate-400">Gunakan tombol <strong class="text-emerald-400">+ Catat Entry</strong> pada kartu sinyal saat melakukan eksekusi beli pukul 09:00 WIB.</p>
           </div>`;
         return;
       }
@@ -1060,7 +1033,7 @@ Balas HANYA JSON valid:
         const isOpen = j.status === "OPEN";
         const pnlColor = (j.net_pnl || 0) >= 0 ? "text-emerald-400" : "text-rose-400";
         return `
-          <div class="bg-slate-900/90 border ${isOpen ? 'border-sky-500/40' : 'border-slate-800'} rounded-2xl p-4 space-y-3 animate-card">
+          <div class="bg-surface border ${isOpen ? 'border-sky-500/40' : 'border-stroke'} rounded-2xl p-4 space-y-3 animate-card">
             <div class="flex justify-between items-start">
               <div>
                 <div class="flex items-center gap-2">
@@ -1072,25 +1045,25 @@ Balas HANYA JSON valid:
                   Buy: <strong>${formatIdr(j.entry)}</strong> • TP: <span class="text-emerald-400">${j.tp}</span> • CL: <span class="text-rose-400">${j.cl}</span>
                 </p>
               </div>
-              <span class="px-2.5 py-1 text-[10px] font-mono font-bold rounded-full ${isOpen ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30' : 'bg-slate-800 text-slate-300'}">
+              <span class="px-2.5 py-1 text-[10px] font-mono font-bold rounded-lg ${isOpen ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30' : 'bg-elevated text-slate-300 border border-stroke'}">
                 ${j.status}
               </span>
             </div>
 
             ${isOpen ? `
               <div class="flex flex-wrap gap-2 pt-1">
-                <button onclick="tutupPosisiTrade('${j.id}', 'TP HIT', ${j.tp})" class="flex-1 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-400 text-xs font-bold py-1.5 rounded-xl">
+                <button onclick="tutupPosisiTrade('${j.id}', 'TP HIT', ${j.tp})" class="flex-1 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-400 text-xs font-bold py-2 rounded-xl transition">
                   Tutup TP (${j.tp})
                 </button>
-                <button onclick="tutupPosisiTrade('${j.id}', 'EXIT 15:50', ${j.entry})" class="flex-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-400 text-xs font-bold py-1.5 rounded-xl">
-                  Exit 15:50
+                <button onclick="tutupPosisiTrade('${j.id}', 'EXIT 15:50', ${j.entry})" class="flex-1 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-400 text-xs font-bold py-2 rounded-xl transition">
+                  Exit Sore
                 </button>
-                <button onclick="tutupPosisiTrade('${j.id}', 'CL HIT', ${j.cl})" class="flex-1 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-400 text-xs font-bold py-1.5 rounded-xl">
+                <button onclick="tutupPosisiTrade('${j.id}', 'CL HIT', ${j.cl})" class="flex-1 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-400 text-xs font-bold py-2 rounded-xl transition">
                   Cut Loss (${j.cl})
                 </button>
               </div>
             ` : `
-              <div class="flex justify-between items-center text-xs font-mono bg-slate-950 px-3 py-2 rounded-xl border border-slate-800">
+              <div class="flex justify-between items-center text-xs font-mono bg-canvas px-3.5 py-2.5 rounded-xl border border-stroke">
                 <span class="text-slate-400">Sell: <strong class="text-white">${formatIdr(j.exit_price)}</strong></span>
                 <span class="font-bold ${pnlColor}">Net P&L: ${j.net_pnl >= 0 ? '+' : ''}${formatIdr(j.net_pnl)}</span>
                 <button onclick="hapusTrade('${j.id}')" class="text-slate-500 hover:text-rose-400 text-[11px]">Hapus</button>
@@ -1100,37 +1073,37 @@ Balas HANYA JSON valid:
       }).join("");
     }
 
-    // COPY TRADING PLAN TO CLIPBOARD
     function salinPlanEmiten(ticker) {
       const item = (appState.daftar_sinyal || []).find(s => s.ticker === ticker);
       if (!item) return;
       const teks = [
-        `📊 *BPJS PLAN — ${item.ticker}* (${item.sinyal})`,
-        `• Status Bandar: ${item.status_bandar} (Dom Top 3: ${item.dominasi_top3}%)`,
-        `• Close / Avg Bandar: ${formatIdr(item.harga_close)} / Rp ${item.buy_avg_bandar}`,
-        `• Max Beli 09:00 WIB: ${formatIdr(item.max_beli_pagi)}`,
-        `• Target TP (+3%): ${formatIdr(item.target_tp)}`,
-        `• Cut Loss (-2%): ${formatIdr(item.cut_loss)}`,
-        `• AI Verdict: ${item.alasan}`
+        `ALPHAFLOW IDX — PT Bintang Ari Wibowo`,
+        `Emiten: ${item.ticker} (${item.sinyal})`,
+        `Status Akumulasi: ${item.status_bandar} (Dominasi Top 3: ${item.dominasi_top3}%)`,
+        `Close / Avg Bandar: ${formatIdr(item.harga_close)} / Rp ${item.buy_avg_bandar}`,
+        `Batas Max Beli 09:00: ${formatIdr(item.max_beli_pagi)}`,
+        `Target TP (+3%): ${formatIdr(item.target_tp)}`,
+        `Cut Loss (-2%): ${formatIdr(item.cut_loss)}`,
+        `Catatan Analisis: ${item.alasan}`
       ].join("\n");
 
       navigator.clipboard.writeText(teks);
-      showToast(`Trading plan ${ticker} disalin ke clipboard!`, "ok");
+      showToast(`Rencana trading ${ticker} disalin.`, "ok");
     }
 
     function salinSemuaValid() {
       const validList = (appState.daftar_sinyal || []).filter(s => s.sinyal === "VALID BPJS" || s.sinyal === "WATCHLIST");
       if (validList.length === 0) {
-        showToast("Belum ada sinyal Valid/Watchlist untuk disalin.", "err");
+        showToast("Belum ada sinyal Valid atau Watchlist untuk disalin.", "err");
         return;
       }
-      const header = `🚀 *WATCHLIST BPJS 09:00 WIB (Acuan EOD ${appState.tanggal_bursa})*\n\n`;
+      const header = `WATCHLIST EKSEKUSI 09:00 WIB — PT Bintang Ari Wibowo (EOD ${appState.tanggal_bursa})\n\n`;
       const body = validList.map(i =>
-        `*${i.ticker}* [${i.sinyal}]\nMax Beli: ${i.max_beli_pagi} | TP: ${i.target_tp} | CL: ${i.cut_loss}\nDom Top 3: ${i.dominasi_top3}% | Avg Bandar: ${i.buy_avg_bandar}`
-      ).join("\n\n");
+        `${i.ticker} [${i.sinyal}] | Max Beli: ${i.max_beli_pagi} | TP: ${i.target_tp} | CL: ${i.cut_loss} | Dom Top 3: ${i.dominasi_top3}%`
+      ).join("\n");
 
       navigator.clipboard.writeText(header + body);
-      showToast(`${validList.length} sinyal BPJS berhasil disalin!`, "ok");
+      showToast(`${validList.length} sinyal berhasil disalin.`, "ok");
     }
 
     function formatIdr(angka) {
@@ -1141,16 +1114,16 @@ Balas HANYA JSON valid:
       const inputVal = Number(document.getElementById(`open-${ticker}`).value);
       const out = document.getElementById(`hasil-open-${ticker}`);
       if (!inputVal || inputVal <= 0) {
-        out.textContent = "Masukkan harga Open 09:00 WIB untuk validasi gap.";
+        out.textContent = "Masukkan harga pembukaan 09:00 WIB untuk validasi gap.";
         out.className = "text-[11px] font-mono text-slate-400 mt-1.5";
         return;
       }
       const gapPersen = (((inputVal - closeKemarin) / closeKemarin) * 100).toFixed(2);
       if (inputVal <= maxBeliPagi) {
-        out.textContent = `GAS EKSEKUSI! Gap ${gapPersen >= 0 ? '+' : ''}${gapPersen}% aman di bawah Max Beli (${formatIdr(maxBeliPagi)}).`;
+        out.textContent = `LAYAK EKSEKUSI — Gap ${gapPersen >= 0 ? '+' : ''}${gapPersen}% masih berada di bawah batas Max Beli (${formatIdr(maxBeliPagi)}).`;
         out.className = "text-[11px] font-mono font-bold text-emerald-400 mt-1.5";
       } else {
-        out.textContent = `SKIP / JANGAN KEJAR! Harga lompat +${gapPersen}% melewati batas aman.`;
+        out.textContent = `LEWATI — Harga pembukaan melompat +${gapPersen}% melebihi batas aman.`;
         out.className = "text-[11px] font-mono font-bold text-rose-400 mt-1.5";
       }
     }
@@ -1167,9 +1140,9 @@ Balas HANYA JSON valid:
 
       if (list.length === 0) {
         container.innerHTML = `
-          <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-10 text-center space-y-2">
-            <p class="text-sm font-bold text-slate-200">Belum ada sinyal untuk kategori ini</p>
-            <p class="text-xs text-slate-400">Sistem akan otomatis scan tiap pukul <strong class="text-emerald-400">08:00 WIB</strong>, atau tekan tombol <strong class="text-emerald-400">Scan AI</strong> kapan saja.</p>
+          <div class="bg-surface border border-stroke rounded-2xl p-10 text-center space-y-2">
+            <p class="text-sm font-bold text-slate-200">Belum ada sinyal pada kategori ini</p>
+            <p class="text-xs text-slate-400">Tekan tombol <strong class="text-emerald-400">Perbarui Data</strong> di bagian atas untuk menarik analisis pasar terbaru.</p>
           </div>`;
         return;
       }
@@ -1189,94 +1162,93 @@ Balas HANYA JSON valid:
         const estNetLoss = (maksLot * 100 * (item.harga_close - (item.cut_loss || item.harga_close))) + estFee;
 
         const buyersHtml = (item.top_buyers || []).map(b => `
-          <div class="flex justify-between items-center text-[11px] py-1 border-b border-slate-800/50 last:border-0">
-            <span class="font-mono font-bold text-emerald-400">${b.kode} <span class="text-slate-500 font-normal">@${b.buy_avg} (${b.avg_order_juta || 0}jt/ord)</span></span>
+          <div class="flex justify-between items-center text-[11px] py-1.5 border-b border-stroke/60 last:border-0">
+            <span class="font-mono font-bold text-emerald-400">${b.kode} <span class="text-slate-400 font-normal">@${b.buy_avg} (${b.avg_order_juta || 0}jt/ord)</span></span>
             <span class="font-mono text-slate-200">+${b.net_miliar}M</span>
           </div>`).join("");
 
         const sellersHtml = (item.top_sellers || []).map(s => `
-          <div class="flex justify-between items-center text-[11px] py-1 border-b border-slate-800/50 last:border-0">
+          <div class="flex justify-between items-center text-[11px] py-1.5 border-b border-stroke/60 last:border-0">
             <span class="font-mono font-bold text-rose-400">${s.kode}</span>
             <span class="font-mono text-slate-300">${s.net_miliar}M</span>
           </div>`).join("");
 
         return `
-          <article class="bg-slate-900/95 border ${isValid ? 'border-emerald-500/40' : 'border-slate-800'} rounded-2xl p-4 sm:p-5 shadow-xl space-y-4 animate-card">
+          <article class="bg-surface border ${isValid ? 'border-emerald-500/40' : 'border-stroke'} rounded-2xl p-4 sm:p-5 space-y-4 animate-card">
             <div class="flex justify-between items-start gap-2">
               <div>
-                <div class="flex items-center gap-2 flex-wrap">
-                  <h2 class="text-2xl font-extrabold font-mono text-white">${item.ticker}</h2>
-                  <span class="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg">${item.persen_naik >= 0 ? '+' : ''}${item.persen_naik}%</span>
+                <div class="flex items-center gap-2.5 flex-wrap">
+                  <h2 class="text-2xl font-extrabold font-mono text-white tracking-tight">${item.ticker}</h2>
+                  <span class="text-xs font-mono font-bold text-emerald-400 bg-elevated border border-stroke px-2.5 py-0.5 rounded-lg">${item.persen_naik >= 0 ? '+' : ''}${item.persen_naik}%</span>
                   <span class="text-[11px] font-mono text-slate-400">Val Rp ${item.nilai_transaksi_miliar}M</span>
                 </div>
-                <p class="text-xs font-semibold text-slate-300 mt-1">${item.status_bandar} • Dom Top 3: <span class="text-emerald-400 font-mono">${item.dominasi_top3}%</span></p>
+                <p class="text-xs font-semibold text-slate-300 mt-1">${item.status_bandar} <span class="text-slate-600 mx-1">•</span> Dominasi Top 3: <span class="text-emerald-400 font-mono">${item.dominasi_top3}%</span></p>
               </div>
-              <span class="px-3 py-1 text-[11px] font-mono font-bold rounded-full border ${badgeStyle}">${item.sinyal}</span>
+              <span class="px-3 py-1 text-[11px] font-mono font-bold rounded-lg border ${badgeStyle}">${item.sinyal}</span>
             </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-              <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5">
-                <span class="text-[10px] text-slate-500 block">Close / Avg Bandar</span>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+              <div class="bg-canvas border border-stroke rounded-xl p-3">
+                <span class="text-[10px] text-slate-400 block">Close / Avg Bandar</span>
                 <span class="font-mono font-bold text-white text-sm block mt-0.5">${formatIdr(item.harga_close)}</span>
                 <span class="font-mono text-[10px] text-slate-400">Avg ${item.buy_avg_bandar} (${item.selisih_modal_persen >= 0 ? '+' : ''}${item.selisih_modal_persen}%)</span>
               </div>
-              <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5">
-                <span class="text-[10px] text-slate-500 block">Max Beli 09:00</span>
+              <div class="bg-canvas border border-stroke rounded-xl p-3">
+                <span class="text-[10px] text-slate-400 block">Max Beli 09:00</span>
                 <span class="font-mono font-bold text-amber-400 text-sm block mt-0.5">${formatIdr(item.max_beli_pagi)}</span>
-                <span class="text-[10px] text-slate-400">Batas gap +2%</span>
+                <span class="text-[10px] text-slate-500">Toleransi gap +2%</span>
               </div>
-              <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5">
-                <span class="text-[10px] text-slate-500 block">Target TP (+3%)</span>
+              <div class="bg-canvas border border-stroke rounded-xl p-3">
+                <span class="text-[10px] text-slate-400 block">Target TP (+3%)</span>
                 <span class="font-mono font-bold text-emerald-400 text-sm block mt-0.5">${formatIdr(item.target_tp)}</span>
-                <span class="font-mono text-[10px] text-emerald-500/80">Net +${formatIdr(estNetProfit)}</span>
+                <span class="font-mono text-[10px] text-emerald-500/90">Net +${formatIdr(estNetProfit)}</span>
               </div>
-              <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5">
-                <span class="text-[10px] text-slate-500 block">Cut Loss (-2%)</span>
+              <div class="bg-canvas border border-stroke rounded-xl p-3">
+                <span class="text-[10px] text-slate-400 block">Cut Loss (-2%)</span>
                 <span class="font-mono font-bold text-rose-400 text-sm block mt-0.5">${formatIdr(item.cut_loss)}</span>
-                <span class="font-mono text-[10px] text-rose-500/80">Net -${formatIdr(estNetLoss)}</span>
+                <span class="font-mono text-[10px] text-rose-500/90">Net -${formatIdr(estNetLoss)}</span>
               </div>
             </div>
 
-            <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-3">
+            <div class="bg-canvas border border-stroke rounded-xl p-3">
               <div class="flex items-center justify-between gap-2">
-                <span class="text-[11px] font-bold text-slate-200">Validator Open 09:00 WIB:</span>
-                <div class="flex items-center gap-1.5">
+                <span class="text-[11px] font-bold text-slate-200">Validasi Harga Open (09:00 WIB):</span>
+                <div class="flex items-center gap-2">
                   <input id="open-${item.ticker}" type="number" placeholder="Harga Open..." oninput="cekGapOpen('${item.ticker}', ${item.harga_close}, ${item.max_beli_pagi})"
-                    class="w-28 bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-2.5 py-1 text-xs font-mono text-white outline-none" />
+                    class="w-28 bg-surface border border-stroke focus:border-emerald-400 rounded-lg px-2.5 py-1 text-xs font-mono text-white outline-none" />
                   <span class="text-[11px] font-mono text-sky-400 font-bold">${maksLot} Lot</span>
                 </div>
               </div>
-              <p id="hasil-open-${item.ticker}" class="text-[11px] font-mono text-slate-400 mt-1.5">Masukkan harga Open 09:00 WIB untuk validasi gap.</p>
+              <p id="hasil-open-${item.ticker}" class="text-[11px] font-mono text-slate-400 mt-1.5">Masukkan harga pembukaan 09:00 WIB untuk validasi gap.</p>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-950/70 p-3 rounded-xl border border-slate-800/80">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-canvas p-3.5 rounded-xl border border-stroke">
               <div>
-                <span class="text-[10px] font-bold uppercase text-emerald-400 block mb-1">Top 5 Net Buyer (Avg Order)</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block mb-1.5">Top 5 Net Buyer</span>
                 ${buyersHtml}
               </div>
               <div>
-                <span class="text-[10px] font-bold uppercase text-rose-400 block mb-1">Top 5 Net Seller</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-rose-400 block mb-1.5">Top 5 Net Seller</span>
                 ${sellersHtml}
               </div>
             </div>
 
-            <div class="bg-slate-800/50 border-l-2 border-emerald-400 px-3.5 py-2.5 rounded-r-xl">
-              <span class="text-[10px] font-mono uppercase text-emerald-400 font-bold block mb-0.5">AI Institutional Verdict</span>
+            <div class="bg-elevated border-l-2 border-emerald-400 px-3.5 py-3 rounded-r-xl">
+              <span class="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-bold block mb-0.5">Ringkasan Analisis Institusional</span>
               <p class="text-xs text-slate-200 leading-relaxed">${item.alasan}</p>
             </div>
 
-            <!-- Action Bar per Kartu -->
-            <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800/70 text-xs">
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-stroke text-xs">
               <div class="flex items-center gap-2">
-                <button onclick="bukaModalTrade('${item.ticker}', ${item.harga_close}, ${item.target_tp}, ${item.cut_loss})" class="bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-400 font-bold px-3 py-1.5 rounded-xl transition">
+                <button onclick="bukaModalTrade('${item.ticker}', ${item.harga_close}, ${item.target_tp}, ${item.cut_loss})" class="bg-emerald-500 hover:bg-emerald-400 text-canvas font-bold px-3.5 py-1.5 rounded-xl transition">
                   + Catat Entry
                 </button>
-                <button onclick="salinPlanEmiten('${item.ticker}')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-3 py-1.5 rounded-xl transition">
+                <button onclick="salinPlanEmiten('${item.ticker}')" class="bg-elevated hover:bg-stroke border border-stroke text-slate-200 font-semibold px-3 py-1.5 rounded-xl transition">
                   Salin Plan
                 </button>
               </div>
-              <div class="flex items-center gap-2 font-mono text-[11px]">
-                <a href="https://www.tradingview.com/chart/?symbol=IDX:${item.ticker}" target="_blank" rel="noopener" class="text-sky-400 hover:underline">Chart TV ↗</a>
+              <div class="flex items-center gap-2.5 font-mono text-[11px]">
+                <a href="https://www.tradingview.com/chart/?symbol=IDX:${item.ticker}" target="_blank" rel="noopener" class="text-sky-400 hover:underline">TradingView ↗</a>
                 <span class="text-slate-700">|</span>
                 <a href="https://stockbit.com/symbol/${item.ticker}" target="_blank" rel="noopener" class="text-emerald-400 hover:underline">Stockbit ↗</a>
               </div>
@@ -1286,31 +1258,31 @@ Balas HANYA JSON valid:
     }
 
     function renderFunnel() {
-      document.getElementById("ai-funnel-reason").textContent = appState.alasan_seleksi_ai || "Belum ada data pemilihan AI.";
+      document.getElementById("ai-funnel-reason").textContent = appState.alasan_seleksi_ai || "Belum ada ringkasan seleksi.";
       const tbody = document.getElementById("tabel-funnel");
       const list = appState.funnel_tahap1 || [];
 
       if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-500">Belum ada data saringan pasar.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-500">Belum ada data penyaringan pasar.</td></tr>`;
         return;
       }
 
       tbody.innerHTML = list.map(s => `
         <tr class="${s.dipilih_ai ? 'bg-emerald-500/5' : ''}">
-          <td class="py-2.5 px-3 font-bold text-white">${s.ticker}</td>
-          <td class="py-2.5 px-3 text-slate-300">${s.harga_close || '-'}</td>
-          <td class="py-2.5 px-3 ${s.persen_naik >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${s.persen_naik >= 0 ? '+' : ''}${s.persen_naik}%</td>
-          <td class="py-2.5 px-3 text-slate-300">${s.nilai_transaksi_miliar}M</td>
-          <td class="py-2.5 px-3">
+          <td class="py-2.5 px-4 font-bold text-white">${s.ticker}</td>
+          <td class="py-2.5 px-4 text-slate-300">${s.harga_close || '-'}</td>
+          <td class="py-2.5 px-4 ${s.persen_naik >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${s.persen_naik >= 0 ? '+' : ''}${s.persen_naik}%</td>
+          <td class="py-2.5 px-4 text-slate-300">${s.nilai_transaksi_miliar}M</td>
+          <td class="py-2.5 px-4">
             ${s.dipilih_ai
-              ? '<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">DIPILIH AI</span>'
-              : '<span class="text-slate-500 text-[10px]">Dilewati</span>'}
+              ? '<span class="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">TERPILIH</span>'
+              : '<span class="text-slate-500 text-[10px]">Cadangan</span>'}
           </td>
         </tr>`).join("");
     }
 
     initPengaturan();
-    jalankanClockDanScheduler();
+    jalankanBackgroundScheduler();
     muatDataSekali();
     muatJurnalSekali();
     mulaiRealtimeStream();
