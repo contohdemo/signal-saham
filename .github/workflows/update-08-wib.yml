@@ -1,24 +1,34 @@
-name: Update Sinyal BPJS 08.00 WIB
+name: ALPHAFLOW IDX — Macro News & Signal Engine
 
 on:
   schedule:
-    - cron: '0 1 * * 1-5' # Otomatis Senin-Jumat pukul 08:00 WIB (01:00 UTC)
+    - cron: '0 1 * * 1-5'          # 08:00 WIB (01:00 UTC) - Full Scan (Makro + Berita + 5 Broksum)
+    - cron: '0 0,2-10 * * 1-5'     # Tiap jam 07:00-17:00 WIB - Update Berita Valid & Macro Shock Guard
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Mode eksekusi (auto / full / news_only)'
+        required: false
+        default: 'auto'
 
 jobs:
-  update-sinyal-pagi:
+  run-engine:
     runs-on: ubuntu-latest
     steps:
-      - name: Tarik Data Bursa & Push ke Firebase
+      - name: Jalankan Macro Guard, Berita Valid & Sinyal BPJS
         run: |
-          node -e '
+          node << 'EOF'
           (async () => {
             const DB = "https://signalsaham-9826a-default-rtdb.asia-southeast1.firebasedatabase.app";
             const IA = "ia_live_" + "23UjBBj4A-L4YF1Iihbln-AJ";
             const GR = "gsk_" + "WTfreY9SawK1JkdHWJm4WGdyb3FYfx49Jck1WFb0DGLjT26KwLbq";
 
+            function getWIB() {
+              return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+            }
+
             function getTglBursa(mundur = 0) {
-              const wib = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+              const wib = getWIB();
               const hari = wib.getDay();
               if (hari === 6) wib.setDate(wib.getDate() - 1);
               else if (hari === 0) wib.setDate(wib.getDate() - 2);
@@ -30,15 +40,233 @@ jobs:
               return wib.toISOString().slice(0, 10);
             }
 
-            let tgl = getTglBursa(0);
+            const wibNow = getWIB();
+            const todayStr = wibNow.toISOString().slice(0, 10);
+            const inputMode = "${{ github.event.inputs.mode }}" || "auto";
 
+            // Cek metadata kuota & riwayat run hari ini di Firebase
+            const metaOld = await fetch(`${DB}/bpjs_meta.json`).then(r => r.json()).catch(() => ({})) || {};
+            const newsOld = await fetch(`${DB}/bpjs_news.json`).then(r => r.json()).catch(() => ({})) || {};
+            const targetEod = getTglBursa(0);
+
+            const sudahScanEodIni = metaOld.last_ia_eod === targetEod && (metaOld.ia_used_today || 0) > 0;
+            const isFullRun = inputMode === "full" || (!sudahScanEodIni && (wibNow.getHours() === 8 || inputMode === "auto"));
+
+            let groqCallsToday = metaOld.quota_date === todayStr ? (metaOld.groq_calls_today || 0) : 0;
+            let iaUsedToday = metaOld.quota_date === todayStr ? (metaOld.ia_used_today || 0) : 0;
+
+            // 1. TARIK DATA MAKRO GLOBAL & KURS (0 Kuota API)
+            const macroSymbols = [
+              { sym: "^JKSE", name: "IHSG" },
+              { sym: "IDR=X", name: "USD/IDR" },
+              { sym: "^GSPC", name: "S&P 500" },
+              { sym: "^N225", name: "Nikkei 225" },
+              { sym: "^HSI", name: "Hang Seng" }
+            ];
+
+            const macroQuotes = [];
+            for (const m of macroSymbols) {
+              try {
+                const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(m.sym)}?range=5d&interval=1d`, {
+                  headers: { "User-Agent": "Mozilla/5.0" }
+                }).then(r => r.json());
+                const quote = res.chart.result[0];
+                const closes = quote.indicators.quote[0].close.filter(v => v !== null);
+                const last = closes[closes.length - 1] || 0;
+                const prev = closes[closes.length - 2] || last;
+                const chg = prev > 0 ? Number((((last - prev) / prev) * 100).toFixed(2)) : 0;
+                macroQuotes.push({
+                  name: m.name,
+                  price: m.sym === "IDR=X" ? Math.round(last) : Number(last.toFixed(2)),
+                  change_pct: chg
+                });
+              } catch (_) {}
+            }
+
+            // 2. TARIK RSS BERITA EKONOMI & PASAR MODAL KREDIBEL (0 Kuota API)
+            const rssUrls = [
+              { url: "https://www.cnbcindonesia.com/market/rss", sumber: "CNBC Indonesia" },
+              { url: "https://investasi.kontan.co.id/rss", sumber: "Kontan Investasi" },
+              { url: "https://news.google.com/rss/search?q=IHSG+OR+MSCI+OR+BEI+OR+%22trading+halt%22+OR+%22Bank+Indonesia%22&hl=id&gl=ID&ceid=ID:id", sumber: "Google News Market" }
+            ];
+
+            let rawNews = [];
+            for (const feed of rssUrls) {
+              try {
+                const xml = await fetch(feed.url, { headers: { "User-Agent": "Mozilla/5.0" } }).then(r => r.text());
+                const items = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
+                for (const item of items.slice(0, 6)) {
+                  const title = (item.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/)?.[1] || item.match(/<title>([\s\S]*?)<\/title>/)?.[1] || "").replace(/<[^>]+>/g, "").trim();
+                  const link = (item.match(/<link>([\s\S]*?)<\/link>/)?.[1] || "").trim();
+                  const pubDate = (item.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1] || "").trim();
+                  if (title && link) {
+                    rawNews.push({ title, link, pubDate, sumber: feed.sumber });
+                  }
+                }
+              } catch (_) {}
+            }
+
+            // Deduplikasi judul berita
+            const seenTitles = new Set();
+            rawNews = rawNews.filter(n => {
+              const key = n.title.toLowerCase().slice(0, 45);
+              if (seenTitles.has(key)) return false;
+              seenTitles.add(key);
+              return true;
+            }).slice(0, 14);
+
+            const currentHash = rawNews.map(n => n.title.slice(0, 30)).join("|");
+            const hasNewHeadlines = currentHash !== (newsOld.headline_hash || "") || !newsOld.berita_valid;
+
+            async function getGroqModel() {
+              const modelsRes = await fetch("https://api.groq.com/openai/v1/models", {
+                headers: { "Authorization": "Bearer " + GR }
+              }).then(r => r.json());
+              const activeIds = (modelsRes.data || []).map(m => m.id).filter(id => !/whisper|guard|tts|embed|orpheus|playai/i.test(id));
+              return ["llama-3.3-70b-versatile", "meta-llama/llama-4-maverick-17b-128e-instruct", "llama-3.1-8b-instant"].find(m => activeIds.includes(m)) || activeIds[0];
+            }
+
+            let modelId = null;
+            let macroResult = newsOld;
+
+            // Panggil AI untuk berita & Macro Shock Guard HANYA jika ada berita baru atau saat Full Run
+            if (hasNewHeadlines || isFullRun) {
+              modelId = await getGroqModel();
+              groqCallsToday++;
+              const aiMacro = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": "Bearer " + GR },
+                body: JSON.stringify({
+                  model: modelId,
+                  temperature: 0.1,
+                  messages: [
+                    {
+                      role: "system",
+                      content: `Kamu adalah Kepala Riset Makro & Manajemen Risiko PT Bintang Ari Wibowo untuk bursa saham Indonesia (IHSG).
+Tugasmu:
+1. Evaluasi indeks global, USD/IDR, dan daftar berita terbaru secara cermat (abaikan berita promosi/klikbait).
+2. Tentukan "risk_score" (1-10):
+   - 1-4: Pasar normal/kondusif.
+   - 5-7: Katalis positif kuat (bullish IHSG / inflow asing).
+   - 8-10: GUNCANGAN SISTEMIK NYATA (contoh: pengumuman/rebalancing MSCI yang memicu outflow besar atau potensi trading halt IHSG, krisis perbankan/geopolitik akut, atau indeks global/Rupiah anjlok parah).
+3. Set "shock_halt": true HANYA JIKA risk_score >= 8 (terbukti valid ada guncangan besar yang berbahaya untuk entry pagi).
+4. Kurasi maksimal 6 berita paling valid & berdampak ke pasar.
+Balas HANYA JSON murni:
+{
+  "risk_score": 3,
+  "shock_halt": false,
+  "regime": "NORMAL | BULLISH_CATALYST | CAUTION | MARKET_SHOCK_HALT",
+  "headline_utama": "1 kalimat tajam kondisi makro saat ini",
+  "ringkasan_makro": "2-3 kalimat analisis valid mengapa pasar aman / bullish / sedang terguncang",
+  "berita_valid": [
+    {
+      "judul": "judul bersih",
+      "sumber": "nama media",
+      "dampak": "GUNCANGAN | POSITIF | NETRAL",
+      "ringkasan": "1 kalimat dampak ke IHSG/sektor",
+      "link": "url asli",
+      "waktu": "jam/tanggal ringkas"
+    }
+  ]
+}`
+                    },
+                    {
+                      role: "user",
+                      content: JSON.stringify({ macroQuotes, rawNews })
+                    }
+                  ]
+                })
+              }).then(r => r.json());
+
+              const rawM = aiMacro.choices[0].message.content.replace(/```json|```/g, "").trim();
+              const parsedM = JSON.parse(rawM.slice(rawM.indexOf("{"), rawM.lastIndexOf("}") + 1));
+
+              macroResult = {
+                updated_at: new Date().toISOString(),
+                headline_hash: currentHash,
+                macro_quotes: macroQuotes,
+                risk_score: parsedM.risk_score || 3,
+                shock_halt: Boolean(parsedM.shock_halt) || (parsedM.risk_score >= 8),
+                regime: parsedM.regime || "NORMAL",
+                headline_utama: parsedM.headline_utama || "Kondisi makro terpantau stabil.",
+                ringkasan_makro: parsedM.ringkasan_makro || "Tidak terdeteksi guncangan sistemik pada pasar keuangan global maupun domestik.",
+                berita_valid: parsedM.berita_valid || []
+              };
+
+              await fetch(`${DB}/bpjs_news.json`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(macroResult)
+              });
+            } else {
+              // Berita sama: cukup perbarui angka indeks global & USD/IDR tanpa memakai token AI
+              await fetch(`${DB}/bpjs_news.json`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ macro_quotes: macroQuotes, updated_at: new Date().toISOString() })
+              });
+            }
+
+            // JIKA TERDETEKSI GUNCANGAN PASAR (SHOCK HALT): HENTIKAN SINYAL & KOSONGKAN DAFTAR SINYAL
+            if (macroResult.shock_halt) {
+              const haltPayload = {
+                tanggal_bursa: targetEod,
+                updated_at: new Date().toISOString(),
+                shock_halt: true,
+                shock_reason: macroResult.ringkasan_makro,
+                shock_headline: macroResult.headline_utama,
+                daftar_sinyal: [],
+                funnel_tahap1: [],
+                alasan_seleksi_ai: "Sinyal ditahan otomatis oleh AI Macro Shock Guard: " + macroResult.headline_utama
+              };
+              await fetch(`${DB}/bpjs_signals.json`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(haltPayload)
+              });
+              await fetch(`${DB}/bpjs_meta.json`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  quota_date: todayStr,
+                  ia_used_today: iaUsedToday,
+                  ia_limit_daily: 5,
+                  last_ia_eod: metaOld.last_ia_eod || "-",
+                  groq_calls_today: groqCallsToday,
+                  last_news_sync: new Date().toISOString(),
+                  last_signal_sync: new Date().toISOString()
+                })
+              });
+              console.log("MARKET SHOCK HALT AKTIF — Sinyal ditahan.");
+              return;
+            }
+
+            // 3. JIKA MODE HANYA BERITA (PER JAM), BERHENTI DI SINI AGAR KUOTA INDEX ALPHA TETAP UTUH
+            if (!isFullRun) {
+              await fetch(`${DB}/bpjs_meta.json`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  quota_date: todayStr,
+                  ia_used_today: iaUsedToday,
+                  ia_limit_daily: 5,
+                  groq_calls_today: groqCallsToday,
+                  last_news_sync: new Date().toISOString()
+                })
+              });
+              console.log("Update berita & makro selesai (0 kuota Index Alpha).");
+              return;
+            }
+
+            // 4. FULL SCAN (08:00 WIB): SCREENING & BROKER SUMMARY
+            let tgl = targetEod;
             const tv = await fetch("https://scanner.tradingview.com/indonesia/scan", {
               method: "POST",
               headers: { "Content-Type": "application/json", "User-Agent": "Mozilla/5.0" },
               body: JSON.stringify({
                 filter: [
-                  { left: "Value.Traded", operation: "greater", right: 5000000000 },
-                  { left: "change", operation: "in_range", right: [0.5, 12] },
+                  { left: "Value.Traded", operation: "greater", right: 10000000000 },
+                  { left: "change", operation: "in_range", right: [1.0, 9.5] },
                   { left: "close", operation: "greater", right: 100 }
                 ],
                 symbols: { query: { types: ["stock"] }, tickers: [] },
@@ -57,17 +285,10 @@ jobs:
               dipilih_ai: false
             }));
 
-            if (!k1.length) {
-              console.log("Tidak ada kandidat pasar.");
-              return;
-            }
+            if (!k1.length) return;
+            if (!modelId) modelId = await getGroqModel();
 
-            const modelsRes = await fetch("https://api.groq.com/openai/v1/models", {
-              headers: { "Authorization": "Bearer " + GR }
-            }).then(r => r.json());
-            const activeIds = (modelsRes.data || []).map(m => m.id).filter(id => !/whisper|guard|tts|embed|orpheus|playai/i.test(id));
-            const modelId = ["llama-3.3-70b-versatile", "meta-llama/llama-4-maverick-17b-128e-instruct", "llama-3.1-8b-instant"].find(m => activeIds.includes(m)) || activeIds[0];
-
+            groqCallsToday++;
             const ai1 = await fetch("https://api.groq.com/openai/v1/chat/completions", {
               method: "POST",
               headers: { "Content-Type": "application/json", "Authorization": "Bearer " + GR },
@@ -75,7 +296,7 @@ jobs:
                 model: modelId,
                 temperature: 0.2,
                 messages: [
-                  { role: "system", content: "Analis kuantitatif PT Bintang Ari Wibowo. Pilih 5 saham terbaik untuk BPJS. Balas JSON murni: {\"terpilih\":[\"T1\",\"T2\",\"T3\",\"T4\",\"T5\"],\"alasan_seleksi\":\"...\"}" },
+                  { role: "system", content: "Analis kuantitatif PT Bintang Ari Wibowo. Pertimbangkan konteks makro: " + macroResult.headline_utama + ". Pilih TEPAT 5 saham paling ideal untuk BPJS BEI. Balas JSON murni: {\"terpilih\":[\"T1\",\"T2\",\"T3\",\"T4\",\"T5\"],\"alasan_seleksi\":\"...\"}" },
                   { role: "user", content: JSON.stringify(k1) }
                 ]
               })
@@ -86,18 +307,30 @@ jobs:
             const top5 = (sel.terpilih || k1.slice(0, 5).map(x => x.ticker)).slice(0, 5);
             k1.forEach(s => { s.dipilih_ai = top5.includes(s.ticker); });
 
+            function bulatkanFraksiBEI(harga) {
+              const h = Math.round(harga);
+              let f = 1;
+              if (h >= 5000) f = 25;
+              else if (h >= 2000) f = 10;
+              else if (h >= 500) f = 5;
+              else if (h >= 200) f = 2;
+              return Math.round(h / f) * f;
+            }
+
             const hasil = [];
             for (let i = 0; i < top5.length; i++) {
               const tk = top5[i];
               const info = k1.find(x => x.ticker === tk);
               if (!info) continue;
 
+              iaUsedToday++;
               let br = await fetch(`https://api.indexalpha.id/stocks/broker-summary?ticker=${tk}&from=${tgl}&to=${tgl}&investor=all&market=RG`, {
                 headers: { "accept": "application/json", "Authorization": "Bearer " + IA }
               }).then(r => r.json()).catch(() => null);
 
               if ((!br || !br.success || !br.data?.length) && i === 0) {
                 const prevTgl = getTglBursa(1);
+                iaUsedToday++;
                 br = await fetch(`https://api.indexalpha.id/stocks/broker-summary?ticker=${tk}&from=${prevTgl}&to=${prevTgl}&investor=all&market=RG`, {
                   headers: { "accept": "application/json", "Authorization": "Bearer " + IA }
                 }).then(r => r.json()).catch(() => null);
@@ -118,6 +351,7 @@ jobs:
                 const dom3 = totBuy > 0 ? Number(((buyers.slice(0, 3).reduce((a, b) => a + b.net_value, 0) / totBuy) * 100).toFixed(1)) : 0;
                 const avg1 = buyers[0]?.buy_avg || info.harga_close;
 
+                groqCallsToday++;
                 const ai2 = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                   method: "POST",
                   headers: { "Content-Type": "application/json", "Authorization": "Bearer " + GR },
@@ -125,8 +359,8 @@ jobs:
                     model: modelId,
                     temperature: 0.2,
                     messages: [
-                      { role: "system", content: "Analis bandarmologi PT Bintang Ari Wibowo untuk eksekusi 09.00 WIB. Balas JSON murni: {\"status_bandar\":\"BIG ACCUMULATION|NORMAL ACCUMULATION|NEUTRAL|DISTRIBUTION\",\"sinyal\":\"VALID BPJS|WATCHLIST|AVOID\",\"alasan\":\"2 kalimat ringkas\"}" },
-                      { role: "user", content: JSON.stringify({ ...info, dom3, buyers, sellers }) }
+                      { role: "system", content: "Analis bandarmologi institusional PT Bintang Ari Wibowo untuk eksekusi 09.00 WIB. Balas JSON murni: {\"status_bandar\":\"BIG ACCUMULATION|NORMAL ACCUMULATION|NEUTRAL|DISTRIBUTION\",\"sinyal\":\"VALID BPJS|WATCHLIST|AVOID\",\"alasan\":\"2 kalimat ringkas\"}" },
+                      { role: "user", content: JSON.stringify({ ...info, dom3, buyers, sellers, macro: macroResult.headline_utama }) }
                     ]
                   })
                 }).then(r => r.json());
@@ -138,45 +372,14 @@ jobs:
                   dominasi_top3: dom3,
                   buy_avg_bandar: avg1,
                   selisih_modal_persen: Number((((info.harga_close - avg1) / avg1) * 100).toFixed(2)),
-                  max_beli_pagi: Math.round(info.harga_close * 1.02),
-                  target_tp: Math.round(info.harga_close * 1.03),
-                  cut_loss: Math.round(info.harga_close * 0.98),
+                  max_beli_pagi: bulatkanFraksiBEI(info.harga_close * 1.02),
+                  target_tp: bulatkanFraksiBEI(info.harga_close * 1.03),
+                  cut_loss: bulatkanFraksiBEI(info.harga_close * 0.98),
                   status_bandar: v.status_bandar,
                   sinyal: v.sinyal,
                   alasan: v.alasan,
                   top_buyers: buyers,
                   top_sellers: sellers
-                });
-              } else {
-                // Fallback kuantitatif jika kuota Index Alpha harian sudah habis
-                const aiFallback = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json", "Authorization": "Bearer " + GR },
-                  body: JSON.stringify({
-                    model: modelId,
-                    temperature: 0.2,
-                    messages: [
-                      { role: "system", content: "Analis kuantitatif PT Bintang Ari Wibowo. Evaluasi momentum & likuiditas saham BPJS. Balas JSON murni: {\"sinyal\":\"VALID BPJS|WATCHLIST\",\"alasan\":\"2 kalimat ringkas\"}" },
-                      { role: "user", content: JSON.stringify(info) }
-                    ]
-                  })
-                }).then(r => r.json());
-
-                const rawFb = aiFallback.choices[0].message.content.replace(/```json|```/g, "").trim();
-                const vFb = JSON.parse(rawFb.slice(rawFb.indexOf("{"), rawFb.lastIndexOf("}") + 1));
-                hasil.push({
-                  ...info,
-                  dominasi_top3: info.persen_naik >= 2 ? 33.5 : 24.0,
-                  buy_avg_bandar: info.harga_close,
-                  selisih_modal_persen: 0.0,
-                  max_beli_pagi: Math.round(info.harga_close * 1.02),
-                  target_tp: Math.round(info.harga_close * 1.03),
-                  cut_loss: Math.round(info.harga_close * 0.98),
-                  status_bandar: info.persen_naik >= 2 ? "NORMAL ACCUMULATION" : "NEUTRAL",
-                  sinyal: vFb.sinyal || (i < 2 ? "VALID BPJS" : "WATCHLIST"),
-                  alasan: vFb.alasan || "Momentum penutupan positif didukung likuiditas transaksi harian di atas rata-rata.",
-                  top_buyers: [],
-                  top_sellers: []
                 });
               }
             }
@@ -187,13 +390,29 @@ jobs:
               const payload = {
                 tanggal_bursa: tgl,
                 updated_at: new Date().toISOString(),
+                shock_halt: false,
+                macro_regime: macroResult.regime,
+                macro_headline: macroResult.headline_utama,
                 daftar_sinyal: hasil,
                 funnel_tahap1: k1,
                 alasan_seleksi_ai: sel.alasan_seleksi
               };
-              await fetch(DB + "/bpjs_signals.json", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-              await fetch(DB + "/bpjs_history/" + tgl + ".json", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-              console.log("Berhasil push " + hasil.length + " sinyal ke Firebase.");
+              await fetch(`${DB}/bpjs_signals.json`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+              await fetch(`${DB}/bpjs_history/${tgl}.json`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
             }
+
+            await fetch(`${DB}/bpjs_meta.json`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                quota_date: todayStr,
+                ia_used_today: Math.min(5, iaUsedToday),
+                ia_limit_daily: 5,
+                last_ia_eod: tgl,
+                groq_calls_today: groqCallsToday,
+                last_news_sync: new Date().toISOString(),
+                last_signal_sync: new Date().toISOString()
+              })
+            });
           })();
-          '
+          EOF
