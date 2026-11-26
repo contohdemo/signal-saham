@@ -1,177 +1,730 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="dark">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BPJS Broksum AI — Sinyal Saham IDX</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#060911" />
+  <title>ALPHAFLOW IDX — Institutional Broker Summary AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Inter"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #060911; color: #E2E8F0; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased pb-12">
+<body class="min-h-screen antialiased pb-20">
 
-  <div class="max-w-lg mx-auto px-4 pt-5">
-    <!-- Header -->
-    <header class="flex justify-between items-center pb-4 border-b border-slate-800">
-      <div>
-        <div class="flex items-center gap-2">
-          <span class="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          <h1 class="text-lg font-bold tracking-tight text-white">BPJS Broksum AI</h1>
+  <!-- Sticky Institutional Header -->
+  <header class="sticky top-0 z-40 bg-[#060911]/95 backdrop-blur-md border-b border-slate-800/90">
+    <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-xl bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-mono font-bold text-sm">
+          AF
         </div>
-        <p id="info-tanggal" class="text-xs text-slate-400 mt-0.5">Memuat jadwal bursa...</p>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-sm sm:text-base font-extrabold tracking-tight text-white">ALPHAFLOW <span class="text-emerald-400">BPJS</span></h1>
+            <span id="badge-sesi" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+              PRE-OPEN 09:00
+            </span>
+          </div>
+          <p id="status-bursa" class="text-[11px] text-slate-400 font-mono mt-0.5">Memuat status bursa...</p>
+        </div>
       </div>
-      <button onclick="muatData()" class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-medium px-3 py-2 rounded-lg transition active:scale-95">
-        Refresh
-      </button>
-    </header>
 
-    <!-- Aturan Eksekusi Singkat -->
-    <div class="mt-4 bg-slate-900/70 border border-slate-800 rounded-xl p-3 text-xs text-slate-300">
-      <div class="flex justify-between items-center cursor-pointer" onclick="document.getElementById('detail-rules').classList.toggle('hidden')">
-        <span class="font-semibold text-emerald-400">Rules Eksekusi BPJS (09.00 – 15.50 WIB)</span>
-        <span class="text-slate-500 text-[11px]">Lihat/Tutup ▼</span>
+      <div class="flex items-center gap-2">
+        <button onclick="jalankanScan()" id="btn-scan" class="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 text-xs font-extrabold px-3.5 py-2 rounded-xl shadow-lg shadow-emerald-500/20 transition active:scale-95">
+          <span id="text-scan">Scan Pagi AI</span>
+        </button>
+        <button onclick="muatData()" title="Sync Firebase" class="bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 p-2 rounded-xl transition active:scale-95">
+          <svg id="icon-refresh" class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
       </div>
-      <ul id="detail-rules" class="hidden mt-2.5 space-y-1.5 text-slate-400 border-t border-slate-800 pt-2">
-        <li>• <strong class="text-slate-200">Beli Pagi (09.00–09.15):</strong> Eksekusi hanya jika harga open tidak melompat (gap up) lebih dari +2% dari harga Close.</li>
-        <li>• <strong class="text-slate-200">Target & Risiko:</strong> Take Profit +2% s/d +4%, Cut Loss ketat di -2%.</li>
-        <li>• <strong class="text-slate-200">Jual Sore:</strong> Wajib tutup semua posisi sebelum pukul 15.50 WIB.</li>
-      </ul>
     </div>
 
-    <!-- Filter Tab -->
-    <div class="flex gap-2 mt-4 mb-4 overflow-x-auto">
-      <button onclick="setFilter('ALL')" id="tab-ALL" class="tab-btn bg-emerald-500 text-slate-950 font-semibold text-xs px-3.5 py-1.5 rounded-full">
-        Semua Kandidat
+    <!-- Navigation Tabs -->
+    <div class="max-w-3xl mx-auto px-4 flex gap-1 border-t border-slate-800/60 overflow-x-auto no-scrollbar">
+      <button onclick="gantiMenu('sinyal')" id="nav-sinyal" class="nav-tab border-b-2 border-emerald-400 text-emerald-400 text-xs font-bold px-3.5 py-2.5 whitespace-nowrap">
+        1. Sinyal Eksekusi (09:00)
       </button>
-      <button onclick="setFilter('VALID BPJS')" id="tab-VALID BPJS" class="tab-btn bg-slate-900 text-slate-300 border border-slate-800 text-xs px-3.5 py-1.5 rounded-full">
-        Valid BPJS
+      <button onclick="gantiMenu('funnel')" id="nav-funnel" class="nav-tab border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-3.5 py-2.5 whitespace-nowrap">
+        2. Transparansi Funnel (15 → 5)
       </button>
-      <button onclick="setFilter('WATCHLIST')" id="tab-WATCHLIST" class="tab-btn bg-slate-900 text-slate-300 border border-slate-800 text-xs px-3.5 py-1.5 rounded-full">
-        Watchlist
+      <button onclick="gantiMenu('logs')" id="nav-logs" class="nav-tab border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-3.5 py-2.5 whitespace-nowrap">
+        3. Live Log & API Key
       </button>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-4 pt-5 space-y-5">
+
+    <!-- KPI Strip -->
+    <section class="grid grid-cols-4 gap-2">
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 sm:p-3">
+        <span class="text-[10px] text-slate-400 block">Siap Beli 09:00</span>
+        <span id="stat-valid" class="text-lg sm:text-xl font-mono font-bold text-emerald-400 mt-0.5 block">0</span>
+      </div>
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 sm:p-3">
+        <span class="text-[10px] text-slate-400 block">Lolos Screening</span>
+        <span id="stat-funnel" class="text-lg sm:text-xl font-mono font-bold text-white mt-0.5 block">0</span>
+      </div>
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 sm:p-3">
+        <span class="text-[10px] text-slate-400 block">Cek Broksum</span>
+        <span id="stat-total" class="text-lg sm:text-xl font-mono font-bold text-sky-400 mt-0.5 block">0/5</span>
+      </div>
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 sm:p-3">
+        <span class="text-[10px] text-slate-400 block">Avg Dom Top 3</span>
+        <span id="stat-dom" class="text-lg sm:text-xl font-mono font-bold text-amber-400 mt-0.5 block">0%</span>
+      </div>
+    </section>
+
+    <!-- VIEW 1: SINYAL EKSEKUSI -->
+    <div id="view-sinyal" class="space-y-4">
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <span class="text-xs font-bold text-white block">Alokasi Modal per Saham (IDR)</span>
+          <span class="text-[11px] text-slate-400">Hitung otomatis jumlah Lot, Target TP (+3%), dan Cut Loss (-2%)</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1 sm:w-44">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-400">Rp</span>
+            <input id="input-modal" type="number" value="5000000" step="500000" min="100000" oninput="renderKartu()"
+              class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl pl-8 pr-3 py-1.5 text-sm font-mono font-bold text-emerald-400 outline-none" />
+          </div>
+          <select id="filter-status" onchange="renderKartu()" class="bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-200 outline-none">
+            <option value="ALL">Semua Status</option>
+            <option value="VALID BPJS">Valid BPJS</option>
+            <option value="WATCHLIST">Watchlist</option>
+            <option value="AVOID">Avoid</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="container-sinyal" class="space-y-4"></div>
     </div>
 
-    <!-- Daftar Kartu Sinyal -->
-    <div id="container-sinyal" class="space-y-4">
-      <div class="text-center py-12 text-slate-500 text-sm">Mengambil data dari Firebase...</div>
+    <!-- VIEW 2: TRANSPARANSI FUNNEL -->
+    <div id="view-funnel" class="hidden space-y-4">
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-2">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold text-white">Alasan AI Memilih 5 Kandidat Broksum</h2>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-sky-500/15 text-sky-400 border border-sky-500/30">STAGE 2 AI FILTER</span>
+        </div>
+        <p id="ai-funnel-reason" class="text-xs text-slate-300 leading-relaxed bg-slate-950 p-3 rounded-xl border border-slate-800/80">
+          Belum ada data pemilihan AI. Tekan tombol Scan Pagi AI untuk melihat proses penyaringan.
+        </p>
+      </div>
+
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden">
+        <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+          <div>
+            <h3 class="text-sm font-bold text-white">15 Saham Likuid Lolos Filter Pasar (Stage 1)</h3>
+            <p class="text-[11px] text-slate-400">Transaksi > Rp 10 Miliar • Kenaikan +1.5% s/d +8.5% • Harga > Rp 100</p>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 font-mono text-[10px] uppercase border-b border-slate-800">
+              <tr>
+                <th class="py-2.5 px-3">Ticker</th>
+                <th class="py-2.5 px-3">Close</th>
+                <th class="py-2.5 px-3">Chg%</th>
+                <th class="py-2.5 px-3">Val (M)</th>
+                <th class="py-2.5 px-3">Status Kuota</th>
+              </tr>
+            </thead>
+            <tbody id="tabel-funnel" class="divide-y divide-slate-800/60 font-mono"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
-  </div>
+
+    <!-- VIEW 3: LIVE LOG & API KEY -->
+    <div id="view-logs" class="hidden space-y-4">
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-3">
+        <h2 class="text-sm font-bold text-white">Konfigurasi API Key & Tanggal Data (Opsional)</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div>
+            <label class="text-[11px] text-slate-400 block mb-1">Index Alpha Key (5 req/hari)</label>
+            <input id="input-ia-key" type="password" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-xs text-slate-200" />
+          </div>
+          <div>
+            <label class="text-[11px] text-slate-400 block mb-1">Groq AI Key (Llama 3.3 70B)</label>
+            <input id="input-groq-key" type="password" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-xs text-slate-200" />
+          </div>
+          <div>
+            <label class="text-[11px] text-slate-400 block mb-1">Override Tanggal EOD (Auto)</label>
+            <input id="input-tanggal-override" type="date" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-xs text-slate-200" />
+          </div>
+        </div>
+        <button onclick="simpanKeys()" class="bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-400 text-xs font-bold px-4 py-2 rounded-xl">
+          Simpan Pengaturan
+        </button>
+      </div>
+
+      <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-mono font-bold text-emerald-400">SYSTEM EXECUTION TERMINAL</span>
+          <button onclick="document.getElementById('terminal-log').innerHTML=''" class="text-[11px] text-slate-500 hover:text-slate-300">Clear</button>
+        </div>
+        <div id="terminal-log" class="font-mono text-[11px] text-slate-300 space-y-1.5 max-h-72 overflow-y-auto">
+          <div class="text-slate-500">> Sistem siap. Menunggu perintah Scan Pagi AI...</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
 
   <script>
     const FIREBASE_DB_URL = "https://signalsaham-9826a-default-rtdb.asia-southeast1.firebasedatabase.app";
-    let semuaData = [];
-    let filterAktif = "ALL";
+    const DEFAULT_IA_KEY = "ia_live_" + "23UjBBj4A-L4YF1Iihbln-AJ";
+    const DEFAULT_GROQ_KEY = "gsk_" + "WTfreY9SawK1JkdHWJm4WGdyb3FYfx49Jck1WFb0DGLjT26KwLbq";
 
-    function formatRupiah(angka) {
-      return "Rp " + Number(angka || 0).toLocaleString("id-ID");
+    let appState = {
+      tanggal_bursa: "-",
+      updated_at: "-",
+      daftar_sinyal: [],
+      funnel_tahap1: [],
+      alasan_seleksi_ai: ""
+    };
+
+    function tambahLog(pesan, tipe = "info") {
+      const box = document.getElementById("terminal-log");
+      const waktu = new Date().toLocaleTimeString("id-ID", { hour12: false });
+      const warna = tipe === "err" ? "text-rose-400" : tipe === "ok" ? "text-emerald-400" : "text-slate-300";
+      const baris = document.createElement("div");
+      baris.className = warna;
+      baris.textContent = `[${waktu}] ${pesan}`;
+      box.prepend(baris);
     }
 
-    function setFilter(kategori) {
-      filterAktif = kategori;
-      document.querySelectorAll(".tab-btn").forEach(btn => {
-        btn.className = "tab-btn bg-slate-900 text-slate-300 border border-slate-800 text-xs px-3.5 py-1.5 rounded-full transition";
-      });
-      const aktifBtn = document.getElementById(`tab-${kategori}`);
-      if (aktifBtn) {
-        aktifBtn.className = "tab-btn bg-emerald-500 text-slate-950 font-semibold text-xs px-3.5 py-1.5 rounded-full transition";
+    function updateStatusJamBursa() {
+      const wib = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+      const jam = wib.getHours() + wib.getMinutes() / 60;
+      const hari = wib.getDay();
+      const badge = document.getElementById("badge-sesi");
+
+      if (hari === 0 || hari === 6) {
+        badge.textContent = "WEEKEND • SIAP SENIN 09:00";
+      } else if (jam < 9) {
+        badge.textContent = "PRE-MARKET • SIAP 09:00 WIB";
+      } else if (jam >= 9 && jam <= 16) {
+        badge.textContent = "BURSA LIVE • CEK GAP OPEN";
+        badge.className = "text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
+      } else {
+        badge.textContent = "EOD CLOSED • DATA BROKSUM READY";
       }
-      renderKartu();
+    }
+
+    function gantiMenu(tab) {
+      ["sinyal", "funnel", "logs"].forEach(t => {
+        document.getElementById(`view-${t}`).classList.toggle("hidden", t !== tab);
+        const btn = document.getElementById(`nav-${t}`);
+        btn.className = t === tab
+          ? "nav-tab border-b-2 border-emerald-400 text-emerald-400 text-xs font-bold px-3.5 py-2.5 whitespace-nowrap"
+          : "nav-tab border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-3.5 py-2.5 whitespace-nowrap";
+      });
+    }
+
+    function initKeys() {
+      document.getElementById("input-ia-key").value = localStorage.getItem("ia_key") || DEFAULT_IA_KEY;
+      document.getElementById("input-groq-key").value = localStorage.getItem("groq_key") || DEFAULT_GROQ_KEY;
+    }
+
+    function simpanKeys() {
+      localStorage.setItem("ia_key", document.getElementById("input-ia-key").value.trim());
+      localStorage.setItem("groq_key", document.getElementById("input-groq-key").value.trim());
+      tambahLog("API Key & pengaturan berhasil disimpan di perangkat.", "ok");
+      alert("Pengaturan tersimpan!");
+    }
+
+    async function fetchAman(url, options = {}) {
+      try {
+        const res = await fetch(url, options);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res;
+      } catch (err) {
+        tambahLog(`Direct fetch dialihkan via proxy untuk: ${url.split("?")[0]}`, "info");
+        const proxyRes = await fetch("https://corsproxy.io/?" + encodeURIComponent(url), options);
+        if (!proxyRes.ok) throw new Error("Proxy HTTP " + proxyRes.status);
+        return proxyRes;
+      }
+    }
+
+    function bulatkanFraksiBEI(harga) {
+      const h = Math.round(harga);
+      let fraksi = 1;
+      if (h >= 5000) fraksi = 25;
+      else if (h >= 2000) fraksi = 10;
+      else if (h >= 500) fraksi = 5;
+      else if (h >= 200) fraksi = 2;
+      return Math.round(h / fraksi) * fraksi;
+    }
+
+    function getTanggalBursaEOD() {
+      const override = document.getElementById("input-tanggal-override").value;
+      if (override) return override;
+
+      const wib = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+      const jam = wib.getHours();
+      const hari = wib.getDay();
+
+      if (hari === 6) {
+        wib.setDate(wib.getDate() - 1);
+      } else if (hari === 0) {
+        wib.setDate(wib.getDate() - 2);
+      } else if (jam < 18) {
+        wib.setDate(wib.getDate() - (hari === 1 ? 3 : 1));
+      }
+
+      const yyyy = wib.getFullYear();
+      const mm = String(wib.getMonth() + 1).padStart(2, "0");
+      const dd = String(wib.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    async function saringTahapSatu() {
+      tambahLog("Menghubungi TradingView IDX Scanner (0 kuota API)...");
+      const res = await fetchAman("https://scanner.tradingview.com/indonesia/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filter: [
+            { left: "Value.Traded", operation: "greater", right: 10000000000 },
+            { left: "change", operation: "in_range", right: [1.5, 8.5] },
+            { left: "close", operation: "greater", right: 100 }
+          ],
+          symbols: { query: { types: ["stock"] }, tickers: [] },
+          columns: ["name", "close", "change", "Value.Traded", "relative_volume_10d_calc"],
+          sort: { sortBy: "Value.Traded", sortOrder: "desc" },
+          range: [0, 15]
+        })
+      });
+
+      const json = await res.json();
+      const hasil = (json.data || []).map(row => ({
+        ticker: row.d[0],
+        harga_close: row.d[1],
+        persen_naik: Number(row.d[2].toFixed(2)),
+        nilai_transaksi_miliar: Number((row.d[3] / 1e9).toFixed(2)),
+        lonjakan_volume: Number((row.d[4] || 1).toFixed(2)),
+        dipilih_ai: false
+      }));
+      tambahLog(`Ditemukan ${hasil.length} saham likuid lolos filter tahap 1.`, "ok");
+      return hasil;
+    }
+
+    async function pilihLimaKandidatAI(daftarSaham, groqKey) {
+      tambahLog("Mengirim 15 kandidat ke Groq Llama-3.3-70B untuk seleksi kuota...");
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${groqKey}`
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content: `Kamu adalah screener kuantitatif BEI untuk strategi BPJS (Beli Pagi Jual Sore).
+Pilih TEPAT 5 saham paling ideal dari daftar untuk dicek Broker Summary-nya (prioritaskan kenaikan sehat +2% s/d +6%, lonjakan volume tinggi, dan likuiditas besar).
+Balas HANYA JSON:
+{
+  "terpilih": ["TICKER1", "TICKER2", "TICKER3", "TICKER4", "TICKER5"],
+  "alasan_seleksi": "penjelasan transparan 2-3 kalimat kenapa 5 saham ini dipilih dibanding 10 saham lainnya"
+}`
+            },
+            { role: "user", content: JSON.stringify(daftarSaham) }
+          ]
+        })
+      });
+
+      if (!res.ok) throw new Error("Groq Stage 2 HTTP " + res.status);
+      const json = await res.json();
+      const parsed = JSON.parse(json.choices[0].message.content);
+      const validTickers = (parsed.terpilih || []).filter(t => daftarSaham.some(s => s.ticker === t));
+
+      for (const s of daftarSaham) {
+        if (validTickers.length >= 5) break;
+        if (!validTickers.includes(s.ticker)) validTickers.push(s.ticker);
+      }
+
+      const final5 = validTickers.slice(0, 5);
+      tambahLog(`AI memilih 5 emiten: ${final5.join(", ")}`, "ok");
+      return {
+        terpilih: final5,
+        alasan_seleksi: parsed.alasan_seleksi || "Dipilih berdasarkan kombinasi likuiditas harian tertinggi dan rasio lonjakan volume."
+      };
+    }
+
+    async function analisisBroksumBPJS(sahamInfo, tanggal, iaKey, groqKey) {
+      const url = `https://api.indexalpha.id/stocks/broker-summary?ticker=${sahamInfo.ticker}&from=${tanggal}&to=${tanggal}&investor=all&market=RG`;
+      const resBroker = await fetchAman(url, {
+        headers: {
+          "accept": "application/json",
+          "Authorization": `Bearer ${iaKey}`
+        }
+      });
+
+      const brokerJson = await resBroker.json();
+      if (!brokerJson.success || !brokerJson.data || brokerJson.data.length === 0) {
+        tambahLog(`Data broksum ${sahamInfo.ticker} tidak tersedia pada ${tanggal}.`, "err");
+        return null;
+      }
+
+      const totalBuyMarket = brokerJson.data.reduce((acc, b) => acc + b.buy_value, 0);
+      const semuaBroker = brokerJson.data.map(b => ({
+        kode: b.code,
+        net_value: b.buy_value - b.sell_value,
+        net_miliar: Number(((b.buy_value - b.sell_value) / 1e9).toFixed(2)),
+        buy_avg: Math.round(b.buy_avg),
+        avg_order_juta: b.buy_freq > 0 ? Math.round((b.buy_value / b.buy_freq) / 1e6) : 0
+      }));
+
+      const topBuyers = semuaBroker.filter(b => b.net_value > 0).sort((a, b) => b.net_value - a.net_value).slice(0, 5);
+      const topSellers = semuaBroker.filter(b => b.net_value < 0).sort((a, b) => a.net_value - b.net_value).slice(0, 5);
+
+      const top3NetBuy = topBuyers.slice(0, 3).reduce((acc, b) => acc + b.net_value, 0);
+      const dominasiTop3 = totalBuyMarket > 0 ? Number(((top3NetBuy / totalBuyMarket) * 100).toFixed(1)) : 0;
+      const buyAvgTop1 = topBuyers[0]?.buy_avg || sahamInfo.harga_close;
+      const selisihModalPersen = Number((((sahamInfo.harga_close - buyAvgTop1) / buyAvgTop1) * 100).toFixed(2));
+
+      const resAi = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${groqKey}`
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content: `Kamu adalah analis bandarmologi institusional BEI khusus eksekusi pagi jam 09.00 WIB (BPJS).
+Perhatikan juga avg_order_juta (nilai rata-rata per transaksi; angka besar menandakan pembelian institusi/bandar, angka kecil menandakan ritel).
+Rules:
+- "VALID BPJS": Dominasi Top 3 Buyer >= 30%, Top Buyer bukan ritel murni (YP, PD, XC, XL), dan selisih Close vs Buy Avg Top Buyer <= 2.5%.
+- "WATCHLIST": Akumulasi cukup baik tapi dominasi 20%-29.9% atau selisih modal 2.6%-4%.
+- "AVOID": Distribusi atau pembeli didominasi ritel.
+Balas HANYA JSON:
+{
+  "status_bandar": "BIG ACCUMULATION | NORMAL ACCUMULATION | NEUTRAL | DISTRIBUTION",
+  "sinyal": "VALID BPJS | WATCHLIST | AVOID",
+  "alasan": "analisis tajam 2 kalimat tentang kekuatan akumulasi institusi vs distribusi ritel serta posisi modal bandar"
+}`
+            },
+            {
+              role: "user",
+              content: JSON.stringify({ ...sahamInfo, dominasiTop3Persen: dominasiTop3, selisihModalPersen, topBuyers, topSellers })
+            }
+          ]
+        })
+      });
+
+      const aiJson = await resAi.json();
+      const hasilAi = JSON.parse(aiJson.choices[0].message.content);
+
+      return {
+        ticker: sahamInfo.ticker,
+        harga_close: sahamInfo.harga_close,
+        persen_naik: sahamInfo.persen_naik,
+        nilai_transaksi_miliar: sahamInfo.nilai_transaksi_miliar,
+        dominasi_top3: dominasiTop3,
+        buy_avg_bandar: buyAvgTop1,
+        selisih_modal_persen: selisihModalPersen,
+        max_beli_pagi: bulatkanFraksiBEI(sahamInfo.harga_close * 1.02),
+        target_tp: bulatkanFraksiBEI(sahamInfo.harga_close * 1.03),
+        cut_loss: bulatkanFraksiBEI(sahamInfo.harga_close * 0.98),
+        status_bandar: hasilAi.status_bandar,
+        sinyal: hasilAi.sinyal,
+        alasan: hasilAi.alasan,
+        top_buyers: topBuyers,
+        top_sellers: topSellers
+      };
+    }
+
+    async function jalankanScan() {
+      const btn = document.getElementById("btn-scan");
+      const textScan = document.getElementById("text-scan");
+      const statusBursa = document.getElementById("status-bursa");
+      const iaKey = localStorage.getItem("ia_key") || DEFAULT_IA_KEY;
+      const groqKey = localStorage.getItem("groq_key") || DEFAULT_GROQ_KEY;
+
+      btn.disabled = true;
+      textScan.textContent = "Scanning...";
+      gantiMenu("logs");
+
+      try {
+        const tanggalBursa = getTanggalBursaEOD();
+        tambahLog(`Memulai Pipeline BPJS untuk acuan data EOD: ${tanggalBursa}`);
+        statusBursa.textContent = `[1/3] Saring pasar BEI (${tanggalBursa})...`;
+
+        const kandidat1 = await saringTahapSatu();
+        if (kandidat1.length === 0) throw new Error("Tidak ada saham lolos filter likuiditas");
+
+        statusBursa.textContent = `[2/3] AI memilih 5 kandidat...`;
+        const seleksiAi = await pilihLimaKandidatAI(kandidat1, groqKey);
+
+        kandidat1.forEach(s => {
+          s.dipilih_ai = seleksiAi.terpilih.includes(s.ticker);
+        });
+
+        const hasilAkhir = [];
+        for (let i = 0; i < seleksiAi.terpilih.length; i++) {
+          const ticker = seleksiAi.terpilih[i];
+          const info = kandidat1.find(s => s.ticker === ticker);
+          if (!info) continue;
+
+          statusBursa.textContent = `[3/3] Broksum ${ticker} (${i + 1}/5)...`;
+          tambahLog(`Menarik Index Alpha Broker Summary: ${ticker} (${i + 1}/5)...`);
+          const analisis = await analisisBroksumBPJS(info, tanggalBursa, iaKey, groqKey);
+          if (analisis) {
+            hasilAkhir.push(analisis);
+            tambahLog(`${ticker} -> ${analisis.sinyal} (Dom Top 3: ${analisis.dominasi_top3}%)`, "ok");
+          }
+        }
+
+        const prioritas = { "VALID BPJS": 1, "WATCHLIST": 2, "AVOID": 3 };
+        hasilAkhir.sort((a, b) => (prioritas[a.sinyal] || 9) - (prioritas[b.sinyal] || 9));
+
+        const payloadBaru = {
+          tanggal_bursa: tanggalBursa,
+          updated_at: new Date().toISOString(),
+          daftar_sinyal: hasilAkhir,
+          funnel_tahap1: kandidat1,
+          alasan_seleksi_ai: seleksiAi.alasan_seleksi
+        };
+
+        await fetch(`${FIREBASE_DB_URL}/bpjs_signals.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payloadBaru)
+        });
+
+        tambahLog("Seluruh hasil & log transparansi tersimpan ke Firebase.", "ok");
+        await muatData();
+        gantiMenu("sinyal");
+      } catch (err) {
+        tambahLog("ERROR: " + err.message, "err");
+        statusBursa.textContent = "Scan gagal — cek tab Live Log";
+      } finally {
+        btn.disabled = false;
+        textScan.textContent = "Scan Pagi AI";
+      }
+    }
+
+    function formatIdr(angka) {
+      return "Rp " + Math.round(Number(angka || 0)).toLocaleString("id-ID");
+    }
+
+    function cekGapOpen(ticker, closeKemarin, maxBeliPagi) {
+      const inputVal = Number(document.getElementById(`open-${ticker}`).value);
+      const out = document.getElementById(`hasil-open-${ticker}`);
+      if (!inputVal || inputVal <= 0) {
+        out.textContent = "Masukkan harga Open 09:00 WIB untuk validasi gap.";
+        out.className = "text-[11px] font-mono text-slate-400 mt-1.5";
+        return;
+      }
+      const gapPersen = (((inputVal - closeKemarin) / closeKemarin) * 100).toFixed(2);
+      if (inputVal <= maxBeliPagi) {
+        out.textContent = `GAS EKSEKUSI! Gap ${gapPersen >= 0 ? '+' : ''}${gapPersen}% masih di bawah batas Max Beli (${formatIdr(maxBeliPagi)}).`;
+        out.className = "text-[11px] font-mono font-bold text-emerald-400 mt-1.5";
+      } else {
+        out.textContent = `SKIP / JANGAN KEJAR! Harga sudah lompat +${gapPersen}% melewati batas aman.`;
+        out.className = "text-[11px] font-mono font-bold text-rose-400 mt-1.5";
+      }
     }
 
     function renderKartu() {
       const container = document.getElementById("container-sinyal");
-      const dataTampil = filterAktif === "ALL"
-        ? semuaData
-        : semuaData.filter(item => item.sinyal === filterAktif);
+      const filterStatus = document.getElementById("filter-status").value;
+      const modalPerEmiten = Number(document.getElementById("input-modal").value) || 5000000;
 
-      if (!dataTampil || dataTampil.length === 0) {
+      const list = (appState.daftar_sinyal || []).filter(item =>
+        filterStatus === "ALL" || item.sinyal === filterStatus
+      );
+
+      if (list.length === 0) {
         container.innerHTML = `
-          <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-8 text-center">
-            <p class="text-sm text-slate-400">Belum ada saham untuk kategori <strong>${filterAktif}</strong>.</p>
-            <p class="text-xs text-slate-500 mt-1">Jalankan skrip scanner.js setelah pukul 18.00 WIB.</p>
+          <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-10 text-center space-y-2">
+            <p class="text-sm font-bold text-slate-200">Belum ada sinyal untuk kategori ini</p>
+            <p class="text-xs text-slate-400">Tekan tombol hijau <strong class="text-emerald-400">Scan Pagi AI</strong> di pojok kanan atas untuk menarik data EOD dan menyiapkan watchlist jam 09:00 WIB.</p>
           </div>`;
         return;
       }
 
-      container.innerHTML = dataTampil.map(item => {
-        const badgeStyle = item.sinyal === "VALID BPJS"
-          ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/40"
-          : item.sinyal === "WATCHLIST"
-          ? "bg-amber-500/15 text-amber-400 border-amber-500/40"
+      container.innerHTML = list.map(item => {
+        const isValid = item.sinyal === "VALID BPJS";
+        const isWatch = item.sinyal === "WATCHLIST";
+        const badgeStyle = isValid ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/40"
+          : isWatch ? "bg-amber-500/15 text-amber-400 border-amber-500/40"
           : "bg-rose-500/15 text-rose-400 border-rose-500/40";
 
-        const selisihModal = item.harga_close && item.buy_avg_bandar
-          ? (((item.harga_close - item.buy_avg_bandar) / item.buy_avg_bandar) * 100).toFixed(2)
-          : "0.00";
+        const hargaPerLot = (item.harga_close || 1) * 100;
+        const maksLot = Math.floor(modalPerEmiten / hargaPerLot);
+        const estProfit = maksLot * 100 * ((item.target_tp || item.harga_close) - item.harga_close);
+        const estLoss = maksLot * 100 * (item.harga_close - (item.cut_loss || item.harga_close));
+
+        const buyersHtml = (item.top_buyers || []).map(b => `
+          <div class="flex justify-between items-center text-[11px] py-1 border-b border-slate-800/50 last:border-0">
+            <span class="font-mono font-bold text-emerald-400">${b.kode} <span class="text-slate-500 font-normal">@${b.buy_avg} (${b.avg_order_juta || 0}jt/ord)</span></span>
+            <span class="font-mono text-slate-200">+${b.net_miliar}M</span>
+          </div>`).join("");
+
+        const sellersHtml = (item.top_sellers || []).map(s => `
+          <div class="flex justify-between items-center text-[11px] py-1 border-b border-slate-800/50 last:border-0">
+            <span class="font-mono font-bold text-rose-400">${s.kode}</span>
+            <span class="font-mono text-slate-300">${s.net_miliar}M</span>
+          </div>`).join("");
 
         return `
-          <article class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg">
-            <!-- Baris Atas: Ticker & Status -->
-            <div class="flex justify-between items-start">
+          <article class="bg-slate-900/95 border ${isValid ? 'border-emerald-500/40' : 'border-slate-800'} rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
+            <div class="flex justify-between items-start gap-2">
               <div>
                 <div class="flex items-center gap-2">
-                  <h2 class="text-xl font-extrabold tracking-wide text-white">${item.ticker}</h2>
-                  <span class="text-xs font-semibold text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded">
-                    +${item.persen_naik}%
-                  </span>
+                  <h2 class="text-2xl font-extrabold font-mono text-white">${item.ticker}</h2>
+                  <span class="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg">+${item.persen_naik}%</span>
+                  <span class="text-[11px] font-mono text-slate-400">Val Rp ${item.nilai_transaksi_miliar}M</span>
                 </div>
-                <p class="text-xs text-slate-400 mt-0.5">${item.status_bandar} • Dominasi Top 3: <strong class="text-slate-200">${item.dominasi_top3}%</strong></p>
+                <p class="text-xs font-semibold text-slate-300 mt-1">${item.status_bandar} • Dom Top 3: <span class="text-emerald-400 font-mono">${item.dominasi_top3}%</span></p>
               </div>
-              <span class="px-3 py-1 text-[11px] font-bold rounded-full border ${badgeStyle}">
-                ${item.sinyal}
-              </span>
+              <span class="px-3 py-1 text-[11px] font-mono font-bold rounded-full border ${badgeStyle}">${item.sinyal}</span>
             </div>
 
-            <!-- Grid Harga & Plan BPJS -->
-            <div class="grid grid-cols-2 gap-2.5 my-3.5 text-xs bg-slate-950 p-3 rounded-xl border border-slate-800/80">
-              <div>
-                <span class="text-slate-500 block text-[11px]">Close / Modal Bandar</span>
-                <span class="font-semibold text-slate-200">${formatRupiah(item.harga_close)}</span>
-                <span class="text-[11px] text-slate-400 block">Avg: ${formatRupiah(item.buy_avg_bandar)} (+${selisihModal}%)</span>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5">
+                <span class="text-[10px] text-slate-500 block">Close / Avg Bandar</span>
+                <span class="font-mono font-bold text-white text-sm block mt-0.5">${formatIdr(item.harga_close)}</span>
+                <span class="font-mono text-[10px] text-slate-400">Avg ${item.buy_avg_bandar} (${item.selisih_modal_persen >= 0 ? '+' : ''}${item.selisih_modal_persen}%)</span>
               </div>
-              <div>
-                <span class="text-slate-500 block text-[11px]">Max Beli Pagi (+2%)</span>
-                <span class="font-bold text-amber-400">${formatRupiah(item.max_beli_pagi)}</span>
-                <span class="text-[11px] text-slate-400 block">Top 3: <strong class="text-emerald-400">${item.top_buyer}</strong></span>
+              <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5">
+                <span class="text-[10px] text-slate-500 block">Max Beli 09:00</span>
+                <span class="font-mono font-bold text-amber-400 text-sm block mt-0.5">${formatIdr(item.max_beli_pagi)}</span>
+                <span class="text-[10px] text-slate-400">Batas gap +2%</span>
               </div>
-              <div class="pt-1.5 border-t border-slate-800/80">
-                <span class="text-slate-500 block text-[11px]">Target TP (+3%)</span>
-                <span class="font-bold text-emerald-400">${formatRupiah(item.target_tp)}</span>
+              <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5">
+                <span class="text-[10px] text-slate-500 block">Target TP (+3%)</span>
+                <span class="font-mono font-bold text-emerald-400 text-sm block mt-0.5">${formatIdr(item.target_tp)}</span>
+                <span class="font-mono text-[10px] text-emerald-500/80">+${formatIdr(estProfit)}</span>
               </div>
-              <div class="pt-1.5 border-t border-slate-800/80">
-                <span class="text-slate-500 block text-[11px]">Cut Loss (-2%)</span>
-                <span class="font-bold text-rose-400">${formatRupiah(item.cut_loss)}</span>
+              <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5">
+                <span class="text-[10px] text-slate-500 block">Cut Loss (-2%)</span>
+                <span class="font-mono font-bold text-rose-400 text-sm block mt-0.5">${formatIdr(item.cut_loss)}</span>
+                <span class="font-mono text-[10px] text-rose-500/80">-${formatIdr(estLoss)}</span>
               </div>
             </div>
 
-            <!-- Analisis AI -->
-            <p class="text-xs text-slate-300 leading-relaxed bg-slate-800/40 p-2.5 rounded-lg border border-slate-800/60">
-              ${item.alasan}
-            </p>
-          </article>
-        `;
+            <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-3">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] font-bold text-slate-200">Validator Open 09:00 WIB:</span>
+                <div class="flex items-center gap-1.5">
+                  <input id="open-${item.ticker}" type="number" placeholder="Harga Open..." oninput="cekGapOpen('${item.ticker}', ${item.harga_close}, ${item.max_beli_pagi})"
+                    class="w-28 bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-lg px-2.5 py-1 text-xs font-mono text-white outline-none" />
+                  <span class="text-[11px] font-mono text-sky-400 font-bold">${maksLot} Lot</span>
+                </div>
+              </div>
+              <p id="hasil-open-${item.ticker}" class="text-[11px] font-mono text-slate-400 mt-1.5">Masukkan harga Open 09:00 WIB untuk validasi gap.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-950/70 p-3 rounded-xl border border-slate-800/80">
+              <div>
+                <span class="text-[10px] font-bold uppercase text-emerald-400 block mb-1">Top 5 Net Buyer (Avg Order)</span>
+                ${buyersHtml}
+              </div>
+              <div>
+                <span class="text-[10px] font-bold uppercase text-rose-400 block mb-1">Top 5 Net Seller</span>
+                ${sellersHtml}
+              </div>
+            </div>
+
+            <div class="bg-slate-800/50 border-l-2 border-emerald-400 px-3.5 py-2.5 rounded-r-xl">
+              <span class="text-[10px] font-mono uppercase text-emerald-400 font-bold block mb-0.5">AI Institutional Verdict</span>
+              <p class="text-xs text-slate-200 leading-relaxed">${item.alasan}</p>
+            </div>
+          </article>`;
       }).join("");
     }
 
+    function renderFunnel() {
+      document.getElementById("ai-funnel-reason").textContent = appState.alasan_seleksi_ai || "Belum ada data pemilihan AI.";
+      const tbody = document.getElementById("tabel-funnel");
+      const list = appState.funnel_tahap1 || [];
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-500">Belum ada data saringan pasar.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(s => `
+        <tr class="${s.dipilih_ai ? 'bg-emerald-500/5' : ''}">
+          <td class="py-2.5 px-3 font-bold text-white">${s.ticker}</td>
+          <td class="py-2.5 px-3 text-slate-300">${s.harga_close}</td>
+          <td class="py-2.5 px-3 text-emerald-400">+${s.persen_naik}%</td>
+          <td class="py-2.5 px-3 text-slate-300">${s.nilai_transaksi_miliar}M</td>
+          <td class="py-2.5 px-3">
+            ${s.dipilih_ai
+              ? '<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">DIPILIH AI</span>'
+              : '<span class="text-slate-500 text-[10px]">Dilewati</span>'}
+          </td>
+        </tr>`).join("");
+    }
+
     async function muatData() {
-      const infoTanggal = document.getElementById("info-tanggal");
+      const icon = document.getElementById("icon-refresh");
+      const statusBursa = document.getElementById("status-bursa");
+      icon.classList.add("animate-spin");
+
       try {
         const res = await fetch(`${FIREBASE_DB_URL}/bpjs_signals.json`);
         const payload = await res.json();
 
-        if (!payload || !payload.daftar_sinyal) {
-          semuaData = [];
-          infoTanggal.textContent = "Data bursa belum tersedia";
-          renderKartu();
-          return;
+        if (payload && payload.daftar_sinyal) {
+          appState = payload;
+          const validCount = payload.daftar_sinyal.filter(s => s.sinyal === "VALID BPJS").length;
+          const avgDom = payload.daftar_sinyal.length > 0
+            ? (payload.daftar_sinyal.reduce((acc, s) => acc + (s.dominasi_top3 || 0), 0) / payload.daftar_sinyal.length).toFixed(1)
+            : 0;
+
+          document.getElementById("stat-valid").textContent = validCount;
+          document.getElementById("stat-funnel").textContent = (payload.funnel_tahap1 || []).length;
+          document.getElementById("stat-total").textContent = `${payload.daftar_sinyal.length}/5`;
+          document.getElementById("stat-dom").textContent = `${avgDom}%`;
+          statusBursa.textContent = `Acuan EOD: ${payload.tanggal_bursa} • Siap 09:00 WIB`;
+        } else {
+          statusBursa.textContent = "Siap — Tekan Scan Pagi AI";
         }
 
-        semuaData = payload.daftar_sinyal;
-        infoTanggal.textContent = `Data Bursa: ${payload.tanggal_bursa} • ${semuaData.length} Saham Dianalisis`;
         renderKartu();
+        renderFunnel();
       } catch (err) {
-        infoTanggal.textContent = "Gagal terhubung ke database";
+        statusBursa.textContent = "Koneksi database terputus";
+      } finally {
+        setTimeout(() => icon.classList.remove("animate-spin"), 400);
       }
     }
 
+    initKeys();
+    updateStatusJamBursa();
     muatData();
   </script>
 </body>
