@@ -159,14 +159,17 @@
     <!-- VIEW 3: LIVE LOG & API KEY -->
     <div id="view-logs" class="hidden space-y-4">
       <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-3">
-        <h2 class="text-sm font-bold text-white">Konfigurasi API Key & Tanggal Data (Opsional)</h2>
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold text-white">Konfigurasi API Key & Tanggal Data</h2>
+          <button onclick="toggleLihatKeys()" id="btn-lihat-key" class="text-[11px] font-mono text-sky-400 hover:underline">Lihat Key</button>
+        </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div>
             <label class="text-[11px] text-slate-400 block mb-1">Index Alpha Key (5 req/hari)</label>
             <input id="input-ia-key" type="password" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-xs text-slate-200" />
           </div>
           <div>
-            <label class="text-[11px] text-slate-400 block mb-1">Groq AI Key (Llama 3.3 70B)</label>
+            <label class="text-[11px] text-slate-400 block mb-1">Groq AI Key (Auto Model)</label>
             <input id="input-groq-key" type="password" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-xs text-slate-200" />
           </div>
           <div>
@@ -203,6 +206,7 @@
       "TLKM", "ASII", "BRPT", "AMMN", "PGAS"
     ];
 
+    let cachedGroqModel = null;
     let appState = {
       tanggal_bursa: "-",
       updated_at: "-",
@@ -249,6 +253,16 @@
       });
     }
 
+    function toggleLihatKeys() {
+      const ia = document.getElementById("input-ia-key");
+      const gr = document.getElementById("input-groq-key");
+      const btn = document.getElementById("btn-lihat-key");
+      const isPass = ia.type === "password";
+      ia.type = isPass ? "text" : "password";
+      gr.type = isPass ? "text" : "password";
+      btn.textContent = isPass ? "Sembunyikan" : "Lihat Key";
+    }
+
     function initKeys() {
       document.getElementById("input-ia-key").value = localStorage.getItem("ia_key") || DEFAULT_IA_KEY;
       document.getElementById("input-groq-key").value = localStorage.getItem("groq_key") || DEFAULT_GROQ_KEY;
@@ -257,24 +271,39 @@
     function simpanKeys() {
       localStorage.setItem("ia_key", document.getElementById("input-ia-key").value.trim());
       localStorage.setItem("groq_key", document.getElementById("input-groq-key").value.trim());
-      tambahLog("API Key & pengaturan berhasil disimpan di perangkat.", "ok");
+      cachedGroqModel = null;
+      tambahLog("API Key & pengaturan berhasil disimpan.", "ok");
       alert("Pengaturan tersimpan!");
+    }
+
+    function fetchDenganTimeout(url, options = {}, ms = 4500) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), ms);
+      return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
     }
 
     async function fetchJsonGet(url, headers = {}) {
       const proxyList = [
-        () => fetch(url, { headers }),
-        () => fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(url), { headers }),
-        () => fetch("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(url), { headers })
+        () => fetchDenganTimeout(url, { headers }, 5000),
+        () => fetchDenganTimeout("https://api.allorigins.win/raw?url=" + encodeURIComponent(url), { headers }, 6000),
+        () => fetchDenganTimeout("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(url), { headers }, 6000)
       ];
 
+      let lastErr = "Gagal mengambil data";
       for (const cobaFetch of proxyList) {
         try {
           const res = await cobaFetch();
-          if (res.ok) return await res.json();
-        } catch (_) {}
+          const text = await res.text();
+          if (!res.ok) {
+            lastErr = `HTTP ${res.status}: ${text.slice(0, 120)}`;
+            continue;
+          }
+          return JSON.parse(text);
+        } catch (e) {
+          lastErr = e.message;
+        }
       }
-      throw new Error("Semua jalur GET gagal untuk " + url.split("?")[0]);
+      throw new Error(lastErr);
     }
 
     async function fetchJsonPost(url, payload) {
@@ -285,9 +314,8 @@
       };
 
       const proxyList = [
-        () => fetch(url, options),
-        () => fetch("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(url), options),
-        () => fetch("https://thingproxy.freeboard.io/fetch/" + url, options)
+        () => fetchDenganTimeout(url, options, 3500),
+        () => fetchDenganTimeout("https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(url), options, 4000)
       ];
 
       for (const cobaFetch of proxyList) {
@@ -297,6 +325,80 @@
         } catch (_) {}
       }
       throw new Error("POST proxy dibatasi browser");
+    }
+
+    function extractJsonAman(rawText) {
+      const bersih = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
+      const awal = bersih.indexOf("{");
+      const akhir = bersih.lastIndexOf("}");
+      if (awal !== -1 && akhir !== -1) {
+        return JSON.parse(bersih.slice(awal, akhir + 1));
+      }
+      return JSON.parse(bersih);
+    }
+
+    async function deteksiModelGroqAktif(groqKey) {
+      if (cachedGroqModel) return cachedGroqModel;
+
+      const res = await fetchDenganTimeout("https://api.groq.com/openai/v1/models", {
+        headers: { "Authorization": `Bearer ${groqKey}` }
+      }, 6000);
+
+      if (!res.ok) {
+        const errBody = await res.text();
+        throw new Error(`Groq Auth/Models HTTP ${res.status}: ${errBody.slice(0, 140)}`);
+      }
+
+      const data = await res.json();
+      const semuaModel = (data.data || [])
+        .map(m => m.id)
+        .filter(id => !/whisper|guard|tts|embed|orpheus|playai/i.test(id));
+
+      const prioritas = [
+        "llama-3.3-70b-versatile",
+        "meta-llama/llama-4-maverick-17b-128e-instruct",
+        "meta-llama/llama-4-scout-17b-16e-instruct",
+        "qwen/qwen3-32b",
+        "deepseek-r1-distill-llama-70b",
+        "llama-3.1-70b-versatile",
+        "llama-3.1-8b-instant"
+      ];
+
+      const terpilih = prioritas.find(p => semuaModel.includes(p)) || semuaModel[0];
+      if (!terpilih) throw new Error("Tidak ada model chat aktif ditemukan di akun Groq.");
+
+      cachedGroqModel = terpilih;
+      tambahLog(`Model AI Groq terdeteksi aktif: ${terpilih}`, "ok");
+      return terpilih;
+    }
+
+    async function panggilGroqAI(groqKey, systemPrompt, userData) {
+      const modelId = await deteksiModelGroqAktif(groqKey);
+
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${groqKey}`
+        },
+        body: JSON.stringify({
+          model: modelId,
+          temperature: 0.2,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: JSON.stringify(userData) }
+          ]
+        })
+      });
+
+      const rawText = await res.text();
+      if (!res.ok) {
+        throw new Error(`Groq Chat HTTP ${res.status}: ${rawText.slice(0, 160)}`);
+      }
+
+      const json = JSON.parse(rawText);
+      const content = json.choices?.[0]?.message?.content || "{}";
+      return extractJsonAman(content);
     }
 
     function bulatkanFraksiBEI(harga) {
@@ -332,7 +434,7 @@
     }
 
     async function ambilFallbackYahooEOD() {
-      tambahLog("Mengambil data harga EOD 15 saham likuid BEI via jalur GET...", "info");
+      tambahLog("Mengambil data harga EOD 15 saham likuid BEI secara paralel...", "info");
       const hasil = await Promise.all(
         LIQUID_IDX_POOL.map(async ticker => {
           try {
@@ -373,7 +475,7 @@
     }
 
     async function saringTahapSatu() {
-      tambahLog("Menghubungi TradingView IDX Scanner (0 kuota API)...");
+      tambahLog("Memindai likuiditas pasar BEI (0 kuota API)...");
       try {
         const json = await fetchJsonPost("https://scanner.tradingview.com/indonesia/scan", {
           filter: [
@@ -401,7 +503,7 @@
           return hasil;
         }
       } catch (_) {
-        tambahLog("TradingView diblokir CORS browser, beralih otomatis ke Scanner Likuid EOD...", "info");
+        tambahLog("Jalur POST TradingView dibatasi CORS, beralih ke Scanner Likuid EOD...", "info");
       }
 
       const fallback = await ambilFallbackYahooEOD();
@@ -410,37 +512,20 @@
     }
 
     async function pilihLimaKandidatAI(daftarSaham, groqKey) {
-      tambahLog("Mengirim 15 kandidat ke Groq Llama-3.3-70B untuk seleksi kuota...");
-      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${groqKey}`
-        },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          response_format: { type: "json_object" },
-          messages: [
-            {
-              role: "system",
-              content: `Kamu adalah screener kuantitatif BEI untuk strategi BPJS (Beli Pagi Jual Sore).
+      tambahLog("Mengirim 15 kandidat ke Groq AI untuk seleksi kuota 5 saham...");
+      const parsed = await panggilGroqAI(
+        groqKey,
+        `Kamu adalah screener kuantitatif BEI untuk strategi BPJS (Beli Pagi Jual Sore).
 Pilih TEPAT 5 saham paling ideal dari daftar untuk dicek Broker Summary-nya (prioritaskan yang memiliki kenaikan harga positif sehat +1% s/d +6% dan likuiditas besar).
-Balas HANYA JSON:
+Balas HANYA dengan objek JSON valid tanpa teks tambahan:
 {
   "terpilih": ["TICKER1", "TICKER2", "TICKER3", "TICKER4", "TICKER5"],
   "alasan_seleksi": "penjelasan transparan 2-3 kalimat kenapa 5 saham ini dipilih dibanding 10 saham lainnya"
-}`
-            },
-            { role: "user", content: JSON.stringify(daftarSaham) }
-          ]
-        })
-      });
+}`,
+        daftarSaham
+      );
 
-      if (!res.ok) throw new Error("Groq Stage 2 HTTP " + res.status);
-      const json = await res.json();
-      const parsed = JSON.parse(json.choices[0].message.content);
       const validTickers = (parsed.terpilih || []).filter(t => daftarSaham.some(s => s.ticker === t));
-
       for (const s of daftarSaham) {
         if (validTickers.length >= 5) break;
         if (!validTickers.includes(s.ticker)) validTickers.push(s.ticker);
@@ -462,7 +547,7 @@ Balas HANYA JSON:
       });
 
       if (!brokerJson.success || !brokerJson.data || brokerJson.data.length === 0) {
-        tambahLog(`Data broksum ${sahamInfo.ticker} tidak tersedia pada ${tanggal}.`, "err");
+        tambahLog(`Data broksum ${sahamInfo.ticker} kosong pada ${tanggal} (${brokerJson.message || "no data"}).`, "err");
         return null;
       }
 
@@ -487,48 +572,29 @@ Balas HANYA JSON:
         : Number((totalBuyMarket / 1e9).toFixed(2));
       const selisihModalPersen = Number((((hargaClose - buyAvgTop1) / buyAvgTop1) * 100).toFixed(2));
 
-      const resAi = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${groqKey}`
-        },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          response_format: { type: "json_object" },
-          messages: [
-            {
-              role: "system",
-              content: `Kamu adalah analis bandarmologi institusional BEI khusus eksekusi pagi jam 09.00 WIB (BPJS).
+      const hasilAi = await panggilGroqAI(
+        groqKey,
+        `Kamu adalah analis bandarmologi institusional BEI khusus eksekusi pagi jam 09.00 WIB (BPJS).
 Perhatikan juga avg_order_juta (nilai rata-rata per transaksi; angka besar menandakan pembelian institusi/bandar, angka kecil menandakan ritel).
 Rules:
 - "VALID BPJS": Dominasi Top 3 Buyer >= 30%, Top Buyer bukan ritel murni (YP, PD, XC, XL), dan selisih Close vs Buy Avg Top Buyer <= 2.5%.
 - "WATCHLIST": Akumulasi cukup baik tapi dominasi 20%-29.9% atau selisih modal 2.6%-4%.
 - "AVOID": Distribusi atau pembeli didominasi ritel.
-Balas HANYA JSON:
+Balas HANYA dengan objek JSON valid tanpa teks tambahan:
 {
   "status_bandar": "BIG ACCUMULATION | NORMAL ACCUMULATION | NEUTRAL | DISTRIBUTION",
   "sinyal": "VALID BPJS | WATCHLIST | AVOID",
   "alasan": "analisis tajam 2 kalimat tentang kekuatan akumulasi institusi vs distribusi ritel serta posisi modal bandar"
-}`
-            },
-            {
-              role: "user",
-              content: JSON.stringify({
-                ...sahamInfo,
-                harga_close: hargaClose,
-                dominasiTop3Persen: dominasiTop3,
-                selisihModalPersen,
-                topBuyers,
-                topSellers
-              })
-            }
-          ]
-        })
-      });
-
-      const aiJson = await resAi.json();
-      const hasilAi = JSON.parse(aiJson.choices[0].message.content);
+}`,
+        {
+          ...sahamInfo,
+          harga_close: hargaClose,
+          dominasiTop3Persen: dominasiTop3,
+          selisihModalPersen,
+          topBuyers,
+          topSellers
+        }
+      );
 
       return {
         ticker: sahamInfo.ticker,
@@ -541,9 +607,9 @@ Balas HANYA JSON:
         max_beli_pagi: bulatkanFraksiBEI(hargaClose * 1.02),
         target_tp: bulatkanFraksiBEI(hargaClose * 1.03),
         cut_loss: bulatkanFraksiBEI(hargaClose * 0.98),
-        status_bandar: hasilAi.status_bandar,
-        sinyal: hasilAi.sinyal,
-        alasan: hasilAi.alasan,
+        status_bandar: hasilAi.status_bandar || "NEUTRAL",
+        sinyal: hasilAi.sinyal || "WATCHLIST",
+        alasan: hasilAi.alasan || "Analisis broker summary selesai.",
         top_buyers: topBuyers,
         top_sellers: topSellers
       };
@@ -553,8 +619,8 @@ Balas HANYA JSON:
       const btn = document.getElementById("btn-scan");
       const textScan = document.getElementById("text-scan");
       const statusBursa = document.getElementById("status-bursa");
-      const iaKey = localStorage.getItem("ia_key") || DEFAULT_IA_KEY;
-      const groqKey = localStorage.getItem("groq_key") || DEFAULT_GROQ_KEY;
+      const iaKey = (localStorage.getItem("ia_key") || DEFAULT_IA_KEY).trim();
+      const groqKey = (localStorage.getItem("groq_key") || DEFAULT_GROQ_KEY).trim();
 
       btn.disabled = true;
       textScan.textContent = "Scanning...";
@@ -583,10 +649,14 @@ Balas HANYA JSON:
 
           statusBursa.textContent = `[3/3] Broksum ${ticker} (${i + 1}/5)...`;
           tambahLog(`Menarik Index Alpha Broker Summary: ${ticker} (${i + 1}/5)...`);
-          const analisis = await analisisBroksumBPJS(info, tanggalBursa, iaKey, groqKey);
-          if (analisis) {
-            hasilAkhir.push(analisis);
-            tambahLog(`${ticker} -> ${analisis.sinyal} (Dom Top 3: ${analisis.dominasi_top3}%)`, "ok");
+          try {
+            const analisis = await analisisBroksumBPJS(info, tanggalBursa, iaKey, groqKey);
+            if (analisis) {
+              hasilAkhir.push(analisis);
+              tambahLog(`${ticker} -> ${analisis.sinyal} (Dom Top 3: ${analisis.dominasi_top3}%)`, "ok");
+            }
+          } catch (errEmiten) {
+            tambahLog(`Gagal pada ${ticker}: ${errEmiten.message}`, "err");
           }
         }
 
@@ -607,9 +677,9 @@ Balas HANYA JSON:
           body: JSON.stringify(payloadBaru)
         });
 
-        tambahLog("Seluruh hasil & log transparansi tersimpan ke Firebase.", "ok");
+        tambahLog(`Selesai! ${hasilAkhir.length} analisis broksum disimpan ke Firebase.`, "ok");
         await muatData();
-        gantiMenu("sinyal");
+        if (hasilAkhir.length > 0) gantiMenu("sinyal");
       } catch (err) {
         tambahLog("ERROR: " + err.message, "err");
         statusBursa.textContent = "Scan gagal — cek tab Live Log";
