@@ -4,7 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#090D16" />
-  <title>ALPHAFLOW IDX — STAR GRUP</title>
+  <title>call you — STAR GROUP</title>
+
+  <!-- PWA Manifest, Favicon & Mobile Web App Meta -->
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./Gemini_Generated_Image_dbfrdndbfrdndbfr.jpeg" />
+  <link rel="apple-touch-icon" href="./Gemini_Generated_Image_dbfrdndbfrdndbfr.jpeg" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="call you" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
@@ -41,6 +51,13 @@
       to { opacity: 1; transform: translateY(0); }
     }
     .animate-card { animation: fadeSlide 0.25s ease-out; }
+
+    /* Otomatis sembunyikan seluruh elemen download saat dibuka sebagai aplikasi PWA (Standalone) */
+    @media all and (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
+      .pwa-install-only {
+        display: none !important;
+      }
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-emerald-500/30 selection:text-emerald-200">
@@ -50,12 +67,15 @@
 
   <!-- SCREEN 0: INITIAL BOOT LOADER -->
   <section id="boot-loader" class="min-h-screen flex flex-col items-center justify-center p-4 gap-4">
-    <div class="h-14 w-14 rounded-2xl bg-emerald-500 text-canvas flex items-center justify-center font-mono font-extrabold text-sm tracking-tighter shadow-lg shadow-emerald-500/20 animate-pulse">
-      STAR
+    <div class="h-16 w-16 rounded-2xl bg-[#0A291C] border border-emerald-500/40 overflow-hidden flex items-center justify-center shadow-lg shadow-emerald-500/20 animate-pulse">
+      <img src="./Gemini_Generated_Image_dbfrdndbfrdndbfr.jpeg"
+           onerror="if(!this.dataset.alt){this.dataset.alt='1';this.src='./Gemini_Generated_Image_dbfrdndbfrdndbfr.jpg';}else{this.style.display='none';}"
+           alt="call you — STAR GROUP"
+           class="h-full w-full object-cover" />
     </div>
     <div class="text-center space-y-1">
-      <p class="text-sm font-extrabold text-white tracking-tight">ALPHAFLOW <span class="text-emerald-400">IDX</span></p>
-      <p class="text-xs text-slate-400">STAR GRUP — Memverifikasi sesi keamanan terminal...</p>
+      <p class="text-base font-extrabold text-white tracking-tight">call <span class="text-emerald-400">you</span></p>
+      <p class="text-xs text-slate-400">STAR GROUP — Memverifikasi sesi keamanan terminal...</p>
     </div>
   </section>
 
@@ -63,12 +83,15 @@
   <section id="auth-gate" class="hidden min-h-screen flex items-center justify-center p-4">
     <div class="bg-surface border border-stroke rounded-2xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl animate-card">
       <div class="flex items-center gap-3.5">
-        <div class="h-12 w-12 rounded-2xl bg-emerald-500 text-canvas flex items-center justify-center font-mono font-extrabold text-xs tracking-tighter shadow-md shadow-emerald-500/20">
-          STAR
+        <div class="h-12 w-12 shrink-0 rounded-2xl bg-[#0A291C] border border-emerald-500/40 overflow-hidden flex items-center justify-center shadow-md shadow-emerald-500/20">
+          <img src="./Gemini_Generated_Image_dbfrdndbfrdndbfr.jpeg"
+               onerror="if(!this.dataset.alt){this.dataset.alt='1';this.src='./Gemini_Generated_Image_dbfrdndbfrdndbfr.jpg';}else{this.style.display='none';}"
+               alt="call you — STAR GROUP"
+               class="h-full w-full object-cover" />
         </div>
         <div>
-          <h1 class="text-lg font-extrabold text-white tracking-tight">ALPHAFLOW <span class="text-emerald-400">IDX</span></h1>
-          <p class="text-xs text-slate-400 font-semibold">STAR GRUP</p>
+          <h1 class="text-lg font-extrabold text-white tracking-tight">call <span class="text-emerald-400">you</span></h1>
+          <p class="text-xs text-slate-400 font-semibold">STAR GROUP</p>
         </div>
       </div>
 
@@ -76,7 +99,7 @@
         <div class="bg-canvas border border-stroke rounded-xl p-4 space-y-1.5">
           <p class="text-xs font-bold text-white">Akses Sistem Terbatas (Private Terminal)</p>
           <p class="text-xs text-slate-400 leading-relaxed">
-            Terminal intelijen aliran dana institusional, rekomendasi winrate tinggi, radar scalping intraday, riwayat TP/SL, dan pemantauan risiko makro global memerlukan verifikasi akun Google atas perizinan administrator STAR GRUP.
+            Terminal intelijen aliran dana institusional, rekomendasi winrate tinggi, radar scalping intraday, riwayat TP/SL, dan pemantauan risiko makro global memerlukan verifikasi akun Google atas perizinan administrator STAR GROUP.
           </p>
         </div>
 
@@ -99,7 +122,7 @@
             <span class="text-xs font-bold text-amber-400">Menunggu Perizinan Administrator</span>
           </div>
           <p class="text-xs text-slate-300 leading-relaxed">
-            Akun <strong id="pending-user-email" class="text-white font-mono"></strong> telah terdaftar dalam antrean akses STAR GRUP. Halaman ini akan terbuka otomatis segera setelah administrator menyetujui permintaan Anda.
+            Akun <strong id="pending-user-email" class="text-white font-mono"></strong> telah terdaftar dalam antrean akses STAR GROUP. Halaman ini akan terbuka otomatis segera setelah administrator menyetujui permintaan Anda.
           </p>
         </div>
         <button onclick="logoutGoogle()" class="w-full bg-elevated hover:bg-stroke border border-stroke text-slate-300 text-xs font-bold py-2.5 rounded-xl transition">
@@ -107,8 +130,23 @@
         </button>
       </div>
 
+      <!-- Fitur Download Aplikasi di Halaman Login (Otomatis hilang jika dibuka dari PWA) -->
+      <div class="pwa-install-only bg-canvas border border-emerald-500/30 rounded-xl p-3.5 space-y-2.5">
+        <div class="flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <span class="text-[11px] font-extrabold text-emerald-400 block">Download Aplikasi Mobile (PWA)</span>
+            <span class="text-[10px] text-slate-400 block leading-snug mt-0.5">
+              Masih tahap pengembangan (belum rilis di Play Store & App Store). Pasang langsung ke layar utama HP.
+            </span>
+          </div>
+          <button type="button" onclick="triggerInstallPWA()" class="shrink-0 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-[11px] font-extrabold px-3 py-2 rounded-lg transition active:scale-95">
+            Download
+          </button>
+        </div>
+      </div>
+
       <p class="text-[11px] text-center text-slate-500">
-        © 2026 STAR GRUP. Hak akses dilindungi sistem.
+        © 2026 STAR GROUP. Hak akses dilindungi sistem.
       </p>
     </div>
   </section>
@@ -118,29 +156,41 @@
 
     <!-- Top Header -->
     <header class="sticky top-0 z-40 bg-canvas/95 backdrop-blur-md border-b border-stroke">
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <div class="h-10 w-10 rounded-xl bg-emerald-500 text-canvas flex items-center justify-center font-mono font-extrabold text-xs tracking-tighter shadow-md shadow-emerald-500/20">
-            STAR
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-2 sm:gap-3">
+        <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div class="h-10 w-10 shrink-0 rounded-xl bg-[#0A291C] border border-emerald-500/40 overflow-hidden flex items-center justify-center shadow-md shadow-emerald-500/20">
+            <img src="./Gemini_Generated_Image_dbfrdndbfrdndbfr.jpeg"
+                 onerror="if(!this.dataset.alt){this.dataset.alt='1';this.src='./Gemini_Generated_Image_dbfrdndbfrdndbfr.jpg';}else{this.style.display='none';}"
+                 alt="call you — STAR GROUP"
+                 class="h-full w-full object-cover" />
           </div>
-          <div>
-            <div class="flex items-center gap-2 flex-wrap">
-              <h1 class="text-sm sm:text-base font-extrabold tracking-tight text-white">ALPHAFLOW <span class="text-emerald-400">IDX</span></h1>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <h1 class="text-sm sm:text-base font-extrabold tracking-tight text-white truncate">call <span class="text-emerald-400">you</span></h1>
               <span id="role-badge" class="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-elevated text-emerald-400 border border-stroke">
                 LIVE
               </span>
             </div>
-            <p class="text-[11px] text-slate-400 font-medium mt-0.5">
-              STAR GRUP <span class="text-slate-600 mx-1">•</span> <span id="clock-wib" class="font-mono text-slate-300">--:-- WIB</span>
+            <p class="text-[11px] text-slate-400 font-medium mt-0.5 truncate">
+              STAR GROUP <span class="text-slate-600 mx-1">•</span> <span id="clock-wib" class="font-mono text-slate-300">--:-- WIB</span>
             </p>
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
-          <a href="#disclaimer-box" class="hidden sm:inline-flex items-center bg-surface hover:bg-elevated border border-amber-500/30 text-amber-300 text-xs font-bold px-3 py-2 rounded-xl transition">
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <!-- Tombol Download Aplikasi di Header (Otomatis hilang saat sudah ter-install jadi PWA) -->
+          <button type="button" onclick="triggerInstallPWA()" class="pwa-install-only inline-flex items-center gap-1.5 bg-surface hover:bg-elevated border border-emerald-500/40 text-emerald-300 text-xs font-bold px-2.5 sm:px-3 py-2 rounded-xl transition active:scale-95">
+            <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3" />
+            </svg>
+            <span class="hidden sm:inline">Download App</span>
+            <span class="sm:hidden">App</span>
+          </button>
+
+          <a href="#disclaimer-box" class="hidden md:inline-flex items-center bg-surface hover:bg-elevated border border-amber-500/30 text-amber-300 text-xs font-bold px-3 py-2 rounded-xl transition">
             Disclaimer
           </a>
-          <button onclick="salinSemuaValid()" class="bg-emerald-500 hover:bg-emerald-400 text-canvas text-xs font-extrabold px-3.5 py-2 rounded-xl shadow-sm transition active:scale-95">
+          <button onclick="salinSemuaValid()" class="bg-emerald-500 hover:bg-emerald-400 text-canvas text-xs font-extrabold px-3 sm:px-3.5 py-2 rounded-xl shadow-sm transition active:scale-95">
             Salin Plan
           </button>
           <button onclick="bukaModalSettings()" title="Pengaturan" class="relative bg-surface hover:bg-elevated border border-stroke text-slate-300 hover:text-white p-2 rounded-xl transition active:scale-95">
@@ -504,18 +554,59 @@
         </div>
       </div>
 
+      <!-- DOWNLOAD APLIKASI MOBILE (PWA) — OTOMATIS HILANG JIKA SUDAH TERPASANG SEBAGAI PWA -->
+      <section id="pwa-download-section" class="pwa-install-only bg-surface border border-emerald-500/40 rounded-2xl p-4 sm:p-5 shadow-md">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div class="space-y-2 max-w-2xl">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="px-2.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/40 text-[10px] font-mono font-extrabold uppercase tracking-wider">
+                DOWNLOAD APLIKASI • VERSI PWA
+              </span>
+              <span class="px-2 py-0.5 rounded-md bg-elevated text-slate-300 border border-stroke text-[10px] font-mono font-semibold">
+                TAHAP PENGEMBANGAN
+              </span>
+            </div>
+
+            <h2 class="text-sm sm:text-base font-extrabold text-white">
+              Download Aplikasi Mobile — <span class="text-emerald-400">call you</span> (STAR GROUP)
+            </h2>
+
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Pasang aplikasi <strong class="text-white">call you — STAR GROUP</strong> langsung ke layar utama HP Android maupun iPhone Anda untuk akses terminal yang lebih cepat, tampilan layar penuh tanpa bilah browser, dan pembaruan otomatis.
+            </p>
+
+            <!-- Catatan Resmi Status Pengembangan (Belum Rilis Play Store / App Store) -->
+            <div class="bg-canvas border border-stroke rounded-xl px-3.5 py-2.5 text-[11px] text-slate-300 leading-relaxed">
+              <strong class="text-amber-300">Catatan Pengembangan:</strong> Saat ini aplikasi kami masih berada dalam <strong class="text-white">tahap pengembangan aktif</strong> sehingga <strong class="text-white">belum tersedia secara resmi di Google Play Store maupun Apple App Store</strong>. Anda tetap dapat mengunduh dan memasangnya secara aman melalui jalur instalasi web resmi (PWA) di bawah ini.
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0 lg:w-60">
+            <button type="button" onclick="triggerInstallPWA()" class="w-full inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-canvas font-extrabold text-xs px-4 py-3 rounded-xl shadow-md shadow-emerald-500/15 transition active:scale-95">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3" />
+              </svg>
+              Download Aplikasi Kami
+            </button>
+            <button type="button" onclick="bukaModalInstall()" class="w-full bg-elevated hover:bg-stroke border border-stroke text-slate-200 font-bold text-xs px-4 py-2.5 rounded-xl transition">
+              Cara Pasang Android & iOS
+            </button>
+          </div>
+        </div>
+      </section>
+
       <!-- DISCLAIMER SECTION (ALWAYS VISIBLE) -->
       <section id="disclaimer-box" class="bg-surface border border-amber-500/40 rounded-2xl p-4 sm:p-5 space-y-2.5 shadow-md">
         <div class="flex items-center justify-between gap-2 flex-wrap">
           <div class="flex items-center gap-2">
             <span class="px-2.5 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/40 text-[10px] font-mono font-extrabold uppercase tracking-wider">
-              DISCLAIMER • STAR GRUP
+              DISCLAIMER • STAR GROUP
             </span>
             <span class="text-xs font-extrabold text-emerald-400">“Kita Akan Kaya Bersama” — Purbaya</span>
           </div>
         </div>
         <p class="text-xs text-slate-300 leading-relaxed">
-          Platform <strong class="text-white">ALPHAFLOW IDX</strong> oleh <strong class="text-white">STAR GRUP</strong> dibangun dengan semangat kata-kata Purbaya: <strong class="text-emerald-400">“Kita akan kaya bersama.”</strong> Seluruh rekomendasi, sinyal, area beli, target TP, maupun batas Cut Loss (SL) disajikan sebagai referensi analisis data dan alat bantu pengambilan keputusan. Perdagangan saham memiliki risiko fluktuasi harga—<strong class="text-emerald-300">jika mencapai Target Profit (TP) mari kita bersyukur bersama, dan jika menyentuh Cut Loss (SL) tetap disiplin menjaga risiko serta jangan menghina atau menyalahkan kami.</strong> Segala keputusan eksekusi dan risiko transaksi sepenuhnya menjadi tanggung jawab masing-masing pengguna.
+          Platform <strong class="text-white">call you</strong> oleh <strong class="text-white">STAR GROUP</strong> dibangun dengan semangat kata-kata Purbaya: <strong class="text-emerald-400">“Kita akan kaya bersama.”</strong> Seluruh rekomendasi, sinyal, area beli, target TP, maupun batas Cut Loss (SL) disajikan sebagai referensi analisis data dan alat bantu pengambilan keputusan. Perdagangan saham memiliki risiko fluktuasi harga—<strong class="text-emerald-300">jika mencapai Target Profit (TP) mari kita bersyukur bersama, dan jika menyentuh Cut Loss (SL) tetap disiplin menjaga risiko serta jangan menghina atau menyalahkan kami.</strong> Segala keputusan eksekusi dan risiko transaksi sepenuhnya menjadi tanggung jawab masing-masing pengguna.
         </p>
       </section>
 
@@ -525,8 +616,8 @@
     <footer class="border-t border-stroke bg-surface/60 mt-auto">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
         <div>
-          <p class="text-xs font-bold text-white">STAR GRUP</p>
-          <p class="text-[11px] text-slate-400">ALPHAFLOW IDX — Institutional Equity, Intraday Radar & Macro Risk Intelligence</p>
+          <p class="text-xs font-bold text-white">STAR GROUP</p>
+          <p class="text-[11px] text-slate-400">call you — Institutional Equity, Intraday Radar & Macro Risk Intelligence</p>
         </div>
         <div class="flex items-center gap-3 text-[11px] text-slate-400">
           <span id="logged-user-label" class="font-mono text-slate-300"></span>
@@ -536,20 +627,84 @@
     </footer>
   </div>
 
+  <!-- Modal Panduan Download / Install PWA (Otomatis hilang jika sudah ter-install sebagai PWA) -->
+  <div id="modal-install-pwa" class="pwa-install-only hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-surface border border-stroke rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-2xl animate-card">
+      <div class="flex justify-between items-center border-b border-stroke pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="h-9 w-9 shrink-0 rounded-xl bg-[#0A291C] border border-emerald-500/40 overflow-hidden flex items-center justify-center">
+            <img src="./Gemini_Generated_Image_dbfrdndbfrdndbfr.jpeg"
+                 onerror="if(!this.dataset.alt){this.dataset.alt='1';this.src='./Gemini_Generated_Image_dbfrdndbfrdndbfr.jpg';}else{this.style.display='none';}"
+                 alt="call you — STAR GROUP"
+                 class="h-full w-full object-cover" />
+          </div>
+          <div>
+            <h3 class="text-sm font-extrabold text-white">Download Aplikasi — call you</h3>
+            <p class="text-[11px] text-slate-400">STAR GROUP • Progressive Web App (PWA)</p>
+          </div>
+        </div>
+        <button onclick="tutupModalInstall()" class="text-slate-400 hover:text-white text-sm font-bold px-2">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="bg-canvas border border-amber-500/35 rounded-xl p-3.5 space-y-1">
+          <span class="text-[11px] font-bold text-amber-300 block">Status Pengembangan Aplikasi</span>
+          <p class="text-[11px] text-slate-300 leading-relaxed">
+            Aplikasi <strong class="text-white">call you — STAR GROUP</strong> saat ini masih dalam <strong class="text-white">tahap pengembangan</strong> sehingga <strong class="text-white">belum dirilis di Google Play Store maupun Apple App Store</strong>. Instalasi dilakukan langsung melalui browser agar tetap ringan dan selalu mendapat pembaruan otomatis.
+          </p>
+        </div>
+
+        <div id="modal-direct-install-box" class="hidden bg-emerald-950/30 border border-emerald-500/40 rounded-xl p-3.5 flex items-center justify-between gap-3">
+          <div>
+            <span class="text-xs font-extrabold text-emerald-400 block">Perangkat Mendukung Install 1-Klik</span>
+            <span class="text-[11px] text-slate-300">Tekan tombol di samping untuk memasang langsung.</span>
+          </div>
+          <button type="button" onclick="jalankanNativePrompt()" class="shrink-0 bg-emerald-500 hover:bg-emerald-400 text-canvas text-xs font-extrabold px-3.5 py-2 rounded-xl transition active:scale-95">
+            Install Sekarang
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="bg-canvas border border-stroke rounded-xl p-3.5 space-y-1.5">
+            <span class="text-[11px] font-extrabold text-emerald-400 block">1. Pengguna Android (Chrome)</span>
+            <ol class="list-decimal list-inside text-[11px] text-slate-300 space-y-1 leading-relaxed">
+              <li>Buka halaman ini lewat <strong class="text-white">Google Chrome</strong>.</li>
+              <li>Ketuk ikon <strong class="text-white">titik tiga (⋮)</strong> di pojok kanan atas.</li>
+              <li>Pilih <strong class="text-emerald-300">Install app</strong> atau <strong class="text-emerald-300">Tambahkan ke layar utama</strong>.</li>
+            </ol>
+          </div>
+
+          <div class="bg-canvas border border-stroke rounded-xl p-3.5 space-y-1.5">
+            <span class="text-[11px] font-extrabold text-sky-400 block">2. Pengguna iPhone (Safari)</span>
+            <ol class="list-decimal list-inside text-[11px] text-slate-300 space-y-1 leading-relaxed">
+              <li>Buka halaman ini lewat browser <strong class="text-white">Safari</strong>.</li>
+              <li>Ketuk ikon <strong class="text-white">Share</strong> (kotak panah atas) di bawah layar.</li>
+              <li>Pilih <strong class="text-sky-300">Add to Home Screen</strong> lalu ketuk <strong class="text-white">Add</strong>.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-stroke">
+        <button onclick="tutupModalInstall()" class="bg-emerald-500 hover:bg-emerald-400 text-canvas px-4 py-2 rounded-xl text-xs font-extrabold">Mengerti</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal Pengaturan & Kontrol Admin -->
   <div id="modal-settings" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-surface border border-stroke rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-2xl">
       <div class="flex justify-between items-center border-b border-stroke pb-3">
         <div>
           <h3 class="text-sm font-extrabold text-white">Pengaturan Terminal</h3>
-          <p class="text-[11px] text-slate-400">STAR GRUP</p>
+          <p class="text-[11px] text-slate-400">call you — STAR GROUP</p>
         </div>
         <button onclick="tutupModalSettings()" class="text-slate-400 hover:text-white text-sm font-bold px-2">✕</button>
       </div>
 
       <div class="space-y-3.5 text-xs">
         <div class="bg-canvas border border-stroke rounded-xl p-3.5 space-y-1.5">
-          <span class="text-[11px] font-bold text-amber-300 block">Filosofi & Disclaimer STAR GRUP</span>
+          <span class="text-[11px] font-bold text-amber-300 block">Filosofi & Disclaimer STAR GROUP</span>
           <p class="text-[11px] text-slate-300 leading-relaxed">
             Dibuat dalam semangat kata-kata Purbaya: <strong class="text-emerald-400">“Kita akan kaya bersama.”</strong> Jika mencapai TP mari bersyukur, jika menyentuh SL disiplin jaga risiko dan jangan menghina kami.
           </p>
@@ -597,6 +752,7 @@
     let listenersStarted = false;
     let activeUserRef = null;
     let maxHargaFilter = 0; // 0 = Semua Harga
+    let deferredInstallPrompt = null;
 
     let appState = {
       tanggal_bursa: "-",
@@ -649,6 +805,101 @@
       el.textContent = pesan;
       box.appendChild(el);
       setTimeout(() => el.remove(), 4000);
+    }
+
+    // DETEKSI MODE PWA STANDALONE (ANTI-BUG TOMBOL DOWNLOAD SAAT SUDAH TERPASANG)
+    function isStandalonePWA() {
+      return (
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.matchMedia("(display-mode: fullscreen)").matches ||
+        window.matchMedia("(display-mode: minimal-ui)").matches ||
+        window.navigator.standalone === true ||
+        document.referrer.startsWith("android-app://")
+      );
+    }
+
+    function sinkronkanStatusPWA() {
+      const sudahTerpasang = isStandalonePWA();
+      document.querySelectorAll(".pwa-install-only").forEach(el => {
+        if (sudahTerpasang) {
+          el.classList.add("hidden");
+          el.style.display = "none";
+        }
+      });
+    }
+
+    function initPWAManager() {
+      sinkronkanStatusPWA();
+
+      const mq = window.matchMedia("(display-mode: standalone)");
+      if (mq && mq.addEventListener) {
+        mq.addEventListener("change", sinkronkanStatusPWA);
+      }
+
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        const directBox = document.getElementById("modal-direct-install-box");
+        if (directBox) directBox.classList.remove("hidden");
+      });
+
+      window.addEventListener("appinstalled", () => {
+        deferredInstallPrompt = null;
+        tutupModalInstall();
+        document.querySelectorAll(".pwa-install-only").forEach(el => {
+          el.classList.add("hidden");
+          el.style.display = "none";
+        });
+        showToast("Aplikasi call you — STAR GROUP berhasil dipasang ke layar utama!", "ok");
+      });
+
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./sw.js").catch(() => {});
+        });
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
+      }
+    }
+
+    async function jalankanNativePrompt() {
+      if (!deferredInstallPrompt) {
+        bukaModalInstall();
+        return;
+      }
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      const directBox = document.getElementById("modal-direct-install-box");
+      if (directBox) directBox.classList.add("hidden");
+      if (outcome === "accepted") {
+        tutupModalInstall();
+      }
+    }
+
+    function triggerInstallPWA() {
+      if (isStandalonePWA()) return;
+      if (deferredInstallPrompt) {
+        jalankanNativePrompt();
+      } else {
+        bukaModalInstall();
+      }
+    }
+
+    function bukaModalInstall() {
+      if (isStandalonePWA()) return;
+      const modal = document.getElementById("modal-install-pwa");
+      if (modal) modal.classList.remove("hidden");
+    }
+
+    function tutupModalInstall() {
+      const modal = document.getElementById("modal-install-pwa");
+      if (modal) modal.classList.add("hidden");
     }
 
     function getWIBDate() {
@@ -735,31 +986,26 @@
     }
 
     // SKOR KELAYAKAN BPJS (0 - 100 POIN)
-    // 40% Winrate Historis + 30% Dominasi Bandar (>=45%) + 20% Jarak Modal Bandar (<=+3%) + 10% Likuiditas (>=5M)
     function evaluasiKelayakanBPJS(item) {
       const wrStat = getStatistikWinrateEmiten(item.ticker);
       const isAvoid = String(item.sinyal || "").toUpperCase() === "AVOID";
 
-      // 1. Komponen Winrate (40 poin)
-      let ptsWinrate = 24; // Netral 60% untuk emiten baru yang belum punya riwayat selesai
+      let ptsWinrate = 24;
       if (wrStat.hasHistory) {
         ptsWinrate = (wrStat.winrate / 100) * 40;
       }
 
-      // 2. Komponen Dominasi Bandar Top 3 (30 poin)
       const dom = Number(item.dominasi_top3 || 0);
       const ptsBandar = dom >= 45
         ? Math.min(30, 22 + ((dom - 45) / 25) * 8)
         : Math.max(0, (dom / 45) * 18);
 
-      // 3. Komponen Jarak Harga Close vs Avg Modal Bandar (20 poin)
       const selisih = Number(item.selisih_modal_persen ?? 0);
       let ptsModal = 0;
       if (selisih <= 0) ptsModal = 20;
       else if (selisih <= 3) ptsModal = 20 - (selisih / 3) * 5;
       else ptsModal = Math.max(0, 10 - (selisih - 3) * 3);
 
-      // 4. Komponen Likuiditas Harian (10 poin)
       const valM = Number(item.nilai_transaksi_miliar || 0);
       const ptsLikuiditas = valM >= 5
         ? Math.min(10, 7 + ((valM - 5) / 20) * 3)
@@ -773,17 +1019,14 @@
     }
 
     // SKOR KELAYAKAN SCALPING INTRADAY (0 - 100 POIN)
-    // 40% Winrate Historis + 30% Lonjakan Volume (>=2x) & Status + 20% Posisi di Atas VWAP + 10% Likuiditas (>=1.5M)
     function evaluasiKelayakanScalp(s) {
       const wrStat = getStatistikWinrateEmiten(s.ticker);
 
-      // 1. Komponen Winrate (40 poin)
       let ptsWinrate = 24;
       if (wrStat.hasHistory) {
         ptsWinrate = (wrStat.winrate / 100) * 40;
       }
 
-      // 2. Komponen Lonjakan Volume & Status Breakout/Ready (30 poin)
       const relVol = Number(s.lonjakan_volume || 0);
       const statusUpper = String(s.status_scalp || "").toUpperCase();
       const statusBonus = statusUpper === "HOT BREAKOUT" ? 12 : statusUpper === "SCALP READY" ? 9 : 4;
@@ -792,10 +1035,8 @@
         : Math.max(0, (relVol / 2.0) * 9);
       const ptsMomentum = statusBonus + volPts;
 
-      // 3. Komponen Posisi Harga di Atas VWAP (20 poin)
       const ptsVwap = s.above_vwap ? 20 : 5;
 
-      // 4. Komponen Likuiditas Intraday (10 poin)
       const valM = Number(s.nilai_transaksi_miliar || 0);
       const ptsLikuiditas = valM >= 1.5
         ? Math.min(10, 7 + ((valM - 1.5) / 8.5) * 3)
@@ -826,6 +1067,7 @@
 
       firebase.auth().onAuthStateChanged(async (user) => {
         document.getElementById("boot-loader").classList.add("hidden");
+        sinkronkanStatusPWA();
 
         if (activeUserRef) {
           activeUserRef.off();
@@ -851,7 +1093,7 @@
           try {
             await userRef.update({
               email: user.email,
-              name: user.displayName || "Admin STAR GRUP",
+              name: user.displayName || "Admin STAR GROUP",
               status: "approved",
               role: "admin",
               last_login: Date.now()
@@ -923,6 +1165,7 @@
       document.getElementById("main-app").classList.remove("hidden");
       document.getElementById("main-app").classList.add("flex");
       document.getElementById("logged-user-label").textContent = user.email;
+      sinkronkanStatusPWA();
 
       const roleBadge = document.getElementById("role-badge");
       if (isAdminUser) {
@@ -1314,7 +1557,6 @@
           : "Menunggu pemindaian sesi aktif...";
       }
 
-      // Filter berdasarkan harga terlebih dahulu untuk Kotak Rekomendasi Utama
       const listByPrice = listRaw.filter(s => {
         const harga = Number(s.harga_sekarang || 0);
         return maxHargaFilter === 0 || (harga > 0 && harga <= maxHargaFilter);
@@ -1435,7 +1677,7 @@
       if (!s) return;
       const ev = evaluasiKelayakanScalp(s);
       const teks = [
-        `RADAR SCALPING LIVE — STAR GRUP`,
+        `RADAR SCALPING LIVE — call you (STAR GROUP)`,
         `Tanggal Call: ${s.tanggal_call || scalpState.tanggal || '-'} (${s.jam_call || scalpState.updated_wib || '-'})`,
         `Emiten: ${s.ticker} [${s.status_scalp} • Skor ${ev.skor}/100]`,
         `Harga Call: ${formatIdr(s.harga_sekarang)} (${s.persen_harian >= 0 ? '+' : ''}${s.persen_harian}% | 5m: +${s.lonjakan_5m}% | Vol: ${s.lonjakan_volume}x)`,
@@ -1661,7 +1903,7 @@
       const jamCall = formatWaktuWIB(appState.updated_at);
       const ev = evaluasiKelayakanBPJS(item);
       const teks = [
-        `ALPHAFLOW IDX — STAR GRUP`,
+        `call you — STAR GROUP`,
         `Tanggal Call: ${tanggalCall} (${jamCall})`,
         `Emiten: ${item.ticker} (${item.sinyal} • Skor ${ev.skor}/100)`,
         `Status Akumulasi: ${item.status_bandar} (Dominasi Top 3: ${item.dominasi_top3}%)`,
@@ -1686,7 +1928,7 @@
         showToast("Belum ada sinyal Valid atau Watchlist untuk disalin.", "err");
         return;
       }
-      const header = `WATCHLIST EKSEKUSI 09:00 WIB — STAR GRUP (Call ${appState.tanggal_bursa})\n\n`;
+      const header = `WATCHLIST EKSEKUSI 09:00 WIB — call you | STAR GROUP (Call ${appState.tanggal_bursa})\n\n`;
       const body = validList.map(i =>
         `${i.ticker} [${i.sinyal}] | Max Beli: ${i.max_beli_pagi} | TP: ${i.target_tp} | SL: ${i.cut_loss} | Dom Top 3: ${i.dominasi_top3}%`
       ).join("\n");
@@ -1828,7 +2070,6 @@
       const container = document.getElementById("container-sinyal");
       const isHalted = Boolean(appState.shock_halt || newsState.shock_halt);
 
-      // Filter harga terlebih dahulu
       const listByPrice = (appState.daftar_sinyal || []).filter(item => {
         const harga = Number(item.harga_close || 0);
         return maxHargaFilter === 0 || (harga > 0 && harga <= maxHargaFilter);
@@ -1874,7 +2115,7 @@
             <p class="text-xs text-slate-400">
               ${maxHargaFilter > 0
                 ? "Silakan naikkan batas filter harga atau pilih 'Semua Harga' untuk melihat seluruh daftar sinyal."
-                : "Sistem STAR GRUP memperbarui sinyal secara otomatis setiap pagi sebelum sesi pembukaan BEI."}
+                : "Sistem STAR GROUP memperbarui sinyal secara otomatis setiap pagi sebelum sesi pembukaan BEI."}
             </p>
           </div>`;
         return;
@@ -2030,6 +2271,7 @@
 
     updateClockWIB();
     setInterval(updateClockWIB, 10000);
+    initPWAManager();
     initFirebaseApp();
   </script>
 </body>
