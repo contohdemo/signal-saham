@@ -1,5 +1,5 @@
 const CACHE_NAME = "callyou-stargroup-v1";
-const STATIC_ASSETS = ["./", "./index.html", "./manifest.json", "./icon-512.png"];
+const STATIC_ASSETS = ["./", "./index.html", "./manifest.json", "Gemini_Generated_Image_dbfrdndbfrdndbfr.jpg"];
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
