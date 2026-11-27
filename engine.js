@@ -40,6 +40,64 @@
         .trim();
     }
 
+    function isValidNewsImage(url) {
+      if (!url || !url.startsWith("http")) return false;
+      return !/gstatic\.com|news\.google\.com|favicon|J6_coFbogxhRI9iM864NL|logo-small/i.test(url);
+    }
+
+    function extractRssImage(itemXml) {
+      const patterns = [
+        /<enclosure[^>]+url=["']([^"']+)["']/i,
+        /<media:content[^>]+url=["']([^"']+)["']/i,
+        /<media:thumbnail[^>]+url=["']([^"']+)["']/i,
+        /<img[^>]+src=["']([^"']+)["']/i
+      ];
+      for (const re of patterns) {
+        const m = itemXml.match(re);
+        if (m && m[1]) {
+          const imgUrl = decodeHtmlEntities(m[1]);
+          if (isValidNewsImage(imgUrl)) return imgUrl;
+        }
+      }
+      return "";
+    }
+
+    async function fetchOgImage(articleUrl) {
+      if (!articleUrl || !articleUrl.startsWith("http")) return "";
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 5000);
+        const resp = await fetch(articleUrl, {
+          headers: BROWSER_HEADERS,
+          redirect: "follow",
+          signal: controller.signal
+        });
+        clearTimeout(timer);
+        if (!resp.ok) return "";
+
+        const html = await resp.text();
+        const headSlice = html.slice(0, 60000);
+        const metaPatterns = [
+          /<meta[^>]+(?:property|name)=["'](?:og:image|og:image:secure_url|twitter:image|twitter:image:src)["'][^>]+content=["']([^"']+)["']/i,
+          /<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image|og:image:secure_url|twitter:image|twitter:image:src)["']/i
+        ];
+
+        for (const re of metaPatterns) {
+          const m = headSlice.match(re);
+          if (m && m[1]) {
+            let imgUrl = decodeHtmlEntities(m[1]);
+            if (imgUrl.startsWith("//")) imgUrl = "https:" + imgUrl;
+            else if (imgUrl.startsWith("/")) {
+              const base = new URL(resp.url || articleUrl);
+              imgUrl = base.origin + imgUrl;
+            }
+            if (isValidNewsImage(imgUrl)) return imgUrl;
+          }
+        }
+      } catch (_) {}
+      return "";
+    }
+
     const wibNow = getWIB();
     const todayStr = wibNow.toISOString().slice(0, 10);
     const hariIni = wibNow.getDay(); // 0 = Minggu, 6 = Sabtu
@@ -114,7 +172,7 @@
     }
     console.log(`Makro quotes berhasil dimuat: ${macroQuotes.length}/${macroSymbols.length}`);
 
-    // 2. TARIK RSS BERITA EKONOMI & PASAR MODAL KREDIBEL
+    // 2. TARIK RSS BERITA EKONOMI & PASAR MODAL + THUMBNAIL RSS
     const rssUrls = [
       { url: "https://www.cnbcindonesia.com/market/rss", sumber: "CNBC Indonesia" },
       { url: "https://investasi.kontan.co.id/rss", sumber: "Kontan Investasi" },
@@ -136,11 +194,12 @@
           const rawTitle = item.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/)?.[1] || item.match(/<title>([\s\S]*?)<\/title>/)?.[1] || "";
           const rawLink = item.match(/<link><!\[CDATA\[([\s\S]*?)\]\]><\/link>/)?.[1] || item.match(/<link>([\s\S]*?)<\/link>/)?.[1] || "";
           const pubDate = (item.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1] || "").trim();
+          const rssImage = extractRssImage(item);
 
           const title = decodeHtmlEntities(rawTitle.replace(/<[^>]+>/g, ""));
           const link = decodeHtmlEntities(rawLink);
           if (title && link && link.startsWith("http")) {
-            rawNews.push({ title, link, pubDate, sumber: feed.sumber });
+            rawNews.push({ title, link, pubDate, sumber: feed.sumber, image: rssImage });
           }
         }
       } catch (e) {
@@ -227,6 +286,8 @@
 
     if (hasNewHeadlines || (isFullRun && rawNews.length > 0)) {
       modelList = await getGroqModels();
+      const rawNewsForAI = rawNews.map(({ title, link, pubDate, sumber }) => ({ title, link, pubDate, sumber }));
+
       const parsedM = await callGroqJSON(
         modelList,
         `Kamu adalah Kepala Riset Makro & Manajemen Risiko PT Bintang Ari Wibowo untuk bursa saham Indonesia (IHSG).
@@ -256,11 +317,37 @@ Balas HANYA JSON murni:
     }
   ]
 }`,
-        { waktu_wib: wibNow.toISOString(), is_weekend: !isWeekday, macroQuotes, rawNews },
+        { waktu_wib: wibNow.toISOString(), is_weekend: !isWeekday, macroQuotes, rawNews: rawNewsForAI },
         0.1
       );
 
       if (parsedM && Array.isArray(parsedM.berita_valid) && parsedM.berita_valid.length > 0) {
+        // Lengkapi setiap berita terpilih dengan gambar dari RSS atau og:image halaman artikel
+        const beritaDenganGambar = await Promise.all(
+          parsedM.berita_valid.slice(0, 6).map(async (item) => {
+            const matchedRaw = rawNews.find(
+              r => r.link === item.link || r.title.toLowerCase().slice(0, 35) === String(item.judul || "").toLowerCase().slice(0, 35)
+            );
+            const linkFinal = item.link || matchedRaw?.link || "";
+            let gambar = matchedRaw?.image || "";
+            if (!gambar && linkFinal) {
+              gambar = await fetchOgImage(linkFinal);
+            }
+            return {
+              judul: item.judul || matchedRaw?.title || "",
+              sumber: item.sumber || matchedRaw?.sumber || "Berita Pasar",
+              dampak: item.dampak || "NETRAL",
+              ringkasan: item.ringkasan || "",
+              link: linkFinal,
+              waktu: item.waktu || "",
+              gambar: gambar || ""
+            };
+          })
+        );
+
+        const jumlahGambar = beritaDenganGambar.filter(b => b.gambar).length;
+        console.log(`Thumbnail berita berhasil dimuat: ${jumlahGambar}/${beritaDenganGambar.length} artikel.`);
+
         macroResult = {
           updated_at: new Date().toISOString(),
           headline_hash: currentHash,
@@ -270,7 +357,7 @@ Balas HANYA JSON murni:
           regime: parsedM.regime || "NORMAL",
           headline_utama: parsedM.headline_utama || "Kondisi makro terpantau stabil.",
           ringkasan_makro: parsedM.ringkasan_makro || "Tidak terdeteksi guncangan sistemik pada pasar keuangan global maupun domestik.",
-          berita_valid: parsedM.berita_valid
+          berita_valid: beritaDenganGambar
         };
 
         await fetch(`${DB}/bpjs_news.json`, {
