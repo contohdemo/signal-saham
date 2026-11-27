@@ -517,7 +517,7 @@
           <p id="news-ringkasan-makro" class="text-xs text-slate-300 leading-relaxed bg-canvas p-3.5 rounded-xl border border-stroke">-</p>
         </div>
 
-        <div id="container-berita" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
+        <div id="container-berita" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
       </div>
 
       <!-- VIEW 4: TRANSPARANSI SCREENING -->
@@ -792,6 +792,15 @@
     };
 
     let historyRawData = null;
+
+    function escapeHtmlAttr(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
 
     function showToast(pesan, tipe = "info") {
       const box = document.getElementById("toast-box");
@@ -1297,6 +1306,30 @@
       }
     }
 
+    function buatBannerFallbackBerita(isShock, isPos, sumberText, hiddenAwal = false) {
+      const bgGrad = isShock
+        ? "from-rose-950/90 via-canvas to-elevated"
+        : isPos
+        ? "from-emerald-950/90 via-canvas to-elevated"
+        : "from-sky-950/75 via-canvas to-elevated";
+      const accentColor = isShock ? "text-rose-400" : isPos ? "text-emerald-400" : "text-sky-400";
+      const labelKategori = isShock ? "MARKET RISK ALERT" : isPos ? "BULLISH CATALYST" : "MARKET BRIEF";
+      const iconSvg = isShock
+        ? `<svg class="w-8 h-8 text-rose-400/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/></svg>`
+        : isPos
+        ? `<svg class="w-8 h-8 text-emerald-400/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>`
+        : `<svg class="w-8 h-8 text-sky-400/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>`;
+
+      return `
+        <div class="${hiddenAwal ? 'hidden ' : ''}w-full h-full bg-gradient-to-br ${bgGrad} flex flex-col items-center justify-center p-4 text-center relative">
+          <div class="p-2.5 rounded-2xl bg-surface/80 border border-stroke/80 mb-2 shadow-inner">
+            ${iconSvg}
+          </div>
+          <span class="text-[10px] font-mono font-extrabold tracking-widest uppercase ${accentColor}">${labelKategori}</span>
+          <span class="text-[11px] font-semibold text-slate-400 mt-0.5">${escapeHtmlAttr(sumberText)}</span>
+        </div>`;
+    }
+
     function perbaruiTampilanBeritaDanMakro() {
       const strip = document.getElementById("macro-strip");
       const quotes = newsState.macro_quotes || [];
@@ -1371,23 +1404,48 @@
         const isShock = b.dampak === "GUNCANGAN";
         const isPos = b.dampak === "POSITIF";
         const tagStyle = isShock
-          ? "bg-rose-500/15 text-rose-400 border-rose-500/40"
+          ? "bg-rose-950/90 text-rose-300 border-rose-500/50"
           : isPos
-          ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/40"
-          : "bg-elevated text-slate-300 border-stroke";
+          ? "bg-emerald-950/90 text-emerald-300 border-emerald-500/50"
+          : "bg-canvas/90 text-slate-200 border-stroke";
+
+        const sumberText = b.sumber || "Media Finansial";
+        const imgUrl = String(b.gambar || b.image || "").trim();
+        const hasImg = imgUrl.startsWith("http");
+
+        const mediaHeaderHtml = hasImg
+          ? `<img src="${escapeHtmlAttr(imgUrl)}"
+                  alt="${escapeHtmlAttr(b.judul)}"
+                  loading="lazy"
+                  referrerpolicy="no-referrer"
+                  onerror="this.style.display='none';if(this.nextElementSibling){this.nextElementSibling.classList.remove('hidden');}"
+                  class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+             ${buatBannerFallbackBerita(isShock, isPos, sumberText, true)}`
+          : buatBannerFallbackBerita(isShock, isPos, sumberText, false);
 
         return `
-          <article class="bg-surface border ${isShock ? 'border-rose-500/40' : 'border-stroke'} rounded-2xl p-4 sm:p-5 flex flex-col justify-between gap-3 shadow-sm animate-card">
-            <div class="space-y-2">
-              <div class="flex items-center justify-between gap-2">
-                <span class="text-[11px] font-mono text-slate-400">${b.sumber || "Media Finansial"}</span>
-                <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded border ${tagStyle}">${b.dampak || "NETRAL"}</span>
+          <article class="group bg-surface border ${isShock ? 'border-rose-500/40' : 'border-stroke'} rounded-2xl overflow-hidden flex flex-col justify-between shadow-sm animate-card">
+            <div>
+              <div class="relative h-44 w-full bg-canvas border-b border-stroke overflow-hidden">
+                ${mediaHeaderHtml}
+                <div class="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-canvas/95 via-canvas/40 to-transparent"></div>
+                <span class="absolute top-3 right-3 px-2.5 py-0.5 text-[10px] font-mono font-bold rounded-md border backdrop-blur-sm ${tagStyle}">
+                  ${b.dampak || "NETRAL"}
+                </span>
+                <span class="absolute bottom-2.5 left-3.5 px-2 py-0.5 rounded bg-canvas/85 border border-stroke/80 backdrop-blur-sm text-[10px] font-mono font-semibold text-slate-200">
+                  ${escapeHtmlAttr(sumberText)}
+                </span>
               </div>
-              <h3 class="text-sm font-bold text-white leading-snug">${b.judul}</h3>
-              <p class="text-xs text-slate-300 leading-relaxed">${b.ringkasan}</p>
+
+              <div class="p-4 sm:p-5 space-y-2">
+                <h3 class="text-sm font-bold text-white leading-snug group-hover:text-emerald-300 transition-colors">${b.judul}</h3>
+                <p class="text-xs text-slate-300 leading-relaxed">${b.ringkasan}</p>
+              </div>
             </div>
-            <div class="pt-2 border-t border-stroke/60 flex justify-end">
-              <a href="${b.link}" target="_blank" rel="noopener" class="text-[11px] font-mono font-semibold text-sky-400 hover:underline">Baca Sumber Asli ↗</a>
+
+            <div class="px-4 sm:px-5 pb-4 pt-2.5 border-t border-stroke/60 flex items-center justify-between gap-2">
+              <span class="text-[10px] font-mono text-slate-400 truncate">${b.waktu || "Terkini"}</span>
+              <a href="${escapeHtmlAttr(b.link)}" target="_blank" rel="noopener" class="text-[11px] font-mono font-semibold text-sky-400 hover:underline shrink-0">Baca Sumber Asli ↗</a>
             </div>
           </article>`;
       }).join("");
