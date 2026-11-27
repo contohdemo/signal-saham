@@ -1,0 +1,19 @@
+{
+  "name": "call you — STAR GROUP",
+  "short_name": "call you",
+  "description": "Terminal Sinyal Saham & Radar Scalping Intraday — STAR GROUP",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0A291C",
+  "theme_color": "#0A291C",
+  "icons": [
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
