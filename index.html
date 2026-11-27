@@ -76,7 +76,7 @@
         <div class="bg-canvas border border-stroke rounded-xl p-4 space-y-1.5">
           <p class="text-xs font-bold text-white">Akses Sistem Terbatas (Private Terminal)</p>
           <p class="text-xs text-slate-400 leading-relaxed">
-            Terminal intelijen aliran dana institusional, radar scalping intraday, riwayat sinyal TP/SL, dan pemantauan risiko makro global memerlukan verifikasi akun Google atas perizinan administrator STAR GRUP.
+            Terminal intelijen aliran dana institusional, rekomendasi winrate tinggi, radar scalping intraday, riwayat TP/SL, dan pemantauan risiko makro global memerlukan verifikasi akun Google atas perizinan administrator STAR GRUP.
           </p>
         </div>
 
@@ -208,77 +208,141 @@
       </section>
 
       <!-- VIEW 1: SINYAL EKSEKUSI -->
-      <div id="view-sinyal" class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      <div id="view-sinyal" class="space-y-5">
 
-        <!-- Sidebar Controls (Clean without Modal Allocation) -->
-        <aside class="lg:col-span-4 lg:order-2 lg:sticky lg:top-32 space-y-4">
-          <div class="bg-surface border border-stroke rounded-2xl p-4 space-y-3.5 shadow-sm">
+        <!-- Filter Harga Saham (Sesuai Budget 1 Lot Pengguna) -->
+        <section class="bg-surface border border-stroke rounded-2xl p-4 sm:p-5 space-y-3 shadow-sm">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <span class="text-xs font-extrabold text-white block">Filter & Panduan Exit BPJS</span>
-              <span class="text-[11px] text-slate-400 leading-relaxed block mt-0.5">
-                Periksa <strong class="text-white">Tanggal Call</strong> di setiap kartu sebelum masuk, lalu disiplin exit saat menyentuh <strong class="text-emerald-400">Target TP</strong> atau <strong class="text-rose-400">Cut Loss (SL)</strong>.
-              </span>
+              <h2 class="text-xs sm:text-sm font-extrabold text-white">Filter Harga Saham (Sesuai Budget Modal 1 Lot)</h2>
+              <p class="text-[11px] text-slate-400">Pilih batas harga per lembar agar Rekomendasi Utama & daftar sinyal menyesuaikan kantong Anda.</p>
             </div>
-
-            <div class="pt-1 border-t border-stroke/80">
-              <label class="text-[11px] font-semibold text-slate-400 block mb-1.5">Filter Klasifikasi Sinyal</label>
-              <select id="filter-status" onchange="renderKartu()" class="w-full bg-canvas border border-stroke rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 outline-none">
-                <option value="ALL">Semua Sinyal</option>
-                <option value="VALID BPJS">Valid BPJS</option>
-                <option value="WATCHLIST">Watchlist</option>
-                <option value="AVOID">Avoid</option>
-              </select>
-            </div>
-
-            <div class="bg-canvas border border-stroke rounded-xl p-3 space-y-1.5 text-[11px]">
-              <span class="font-bold text-sky-400 block">Aturan Eksekusi Harian (BPJS):</span>
-              <p class="text-slate-300 leading-relaxed">• Beli di sesi pagi (09:00 WIB) hanya jika harga Open ≤ <strong class="text-amber-400">Max Beli</strong>.</p>
-              <p class="text-slate-300 leading-relaxed">• Jika menyentuh <strong class="text-emerald-400">TP (+3%)</strong> atau <strong class="text-rose-400">SL (-2%)</strong>, segera tutup posisi agar tidak bingung saat penutupan.</p>
-              <p class="text-slate-300 leading-relaxed">• Cek tab <button type="button" onclick="gantiMenu('history')" class="text-emerald-400 font-bold underline">Riwayat Sinyal</button> untuk melihat arsip call sebelumnya.</p>
-            </div>
+            <span id="label-aktif-harga-bpjs" class="self-start sm:self-auto px-2.5 py-1 rounded-lg bg-elevated border border-stroke text-[10px] font-mono font-bold text-emerald-400">
+              Filter: Semua Harga
+            </span>
           </div>
 
-          <!-- Desktop-Only Macro Summary Card -->
-          <div class="hidden lg:block bg-surface border border-stroke rounded-2xl p-4 space-y-2.5 shadow-sm">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-extrabold text-white">Ringkasan Makro Terkini</span>
-              <span id="sidebar-risk-badge" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-elevated text-emerald-400 border border-stroke">NORMAL</span>
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-1">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 flex-1">
+              <button type="button" data-price-btn="0" onclick="setFilterHarga(0)"
+                class="price-preset-btn border border-emerald-500/60 bg-emerald-500/15 text-emerald-300 rounded-xl px-3 py-2 text-left transition">
+                <span class="text-xs font-extrabold block">Semua Harga</span>
+                <span class="text-[10px] font-mono opacity-80">Tanpa batas harga</span>
+              </button>
+              <button type="button" data-price-btn="200" onclick="setFilterHarga(200)"
+                class="price-preset-btn border border-stroke bg-canvas hover:bg-elevated text-slate-300 rounded-xl px-3 py-2 text-left transition">
+                <span class="text-xs font-extrabold block">≤ Rp 200</span>
+                <span class="text-[10px] font-mono text-slate-400">Modal ±Rp 20 rb/lot</span>
+              </button>
+              <button type="button" data-price-btn="500" onclick="setFilterHarga(500)"
+                class="price-preset-btn border border-stroke bg-canvas hover:bg-elevated text-slate-300 rounded-xl px-3 py-2 text-left transition">
+                <span class="text-xs font-extrabold block">≤ Rp 500</span>
+                <span class="text-[10px] font-mono text-slate-400">Modal ±Rp 50 rb/lot</span>
+              </button>
+              <button type="button" data-price-btn="1000" onclick="setFilterHarga(1000)"
+                class="price-preset-btn border border-stroke bg-canvas hover:bg-elevated text-slate-300 rounded-xl px-3 py-2 text-left transition">
+                <span class="text-xs font-extrabold block">≤ Rp 1.000</span>
+                <span class="text-[10px] font-mono text-slate-400">Modal ±Rp 100 rb/lot</span>
+              </button>
             </div>
-            <p id="sidebar-macro-headline" class="text-xs font-semibold text-slate-200 leading-snug">Memuat kondisi pasar...</p>
-            <button onclick="gantiMenu('berita')" class="text-[11px] font-mono font-semibold text-sky-400 hover:underline pt-1 inline-block">
-              Buka Berita & Indeks Global →
-            </button>
-          </div>
 
-          <!-- ADMIN ONLY: Telemetry Widget -->
-          <div id="admin-sidebar-card" class="hidden bg-surface border border-emerald-500/30 rounded-2xl p-4 space-y-2.5 shadow-sm">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-extrabold text-emerald-400">Telemetri Sistem (Admin)</span>
-              <span class="text-[10px] font-mono text-slate-400">PRIVATE</span>
-            </div>
-            <div class="grid grid-cols-2 gap-2 font-mono text-[11px]">
-              <div class="bg-canvas p-2.5 rounded-xl border border-stroke">
-                <span class="text-slate-400 block text-[10px]">Sisa Index Alpha</span>
-                <strong id="sidebar-ia-quota" class="text-white">5 / 5</strong>
+            <div class="flex items-center gap-2 lg:w-64 shrink-0">
+              <div class="relative flex-1">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-mono text-slate-400">Rp</span>
+                <input id="input-max-harga-bpjs" type="number" min="50" step="10" placeholder="Maks harga bebas..."
+                  oninput="onInputMaxHarga(this.value)"
+                  class="w-full bg-canvas border border-stroke focus:border-emerald-500 rounded-xl pl-8 pr-3 py-2.5 text-xs font-mono font-bold text-white outline-none" />
               </div>
-              <div class="bg-canvas p-2.5 rounded-xl border border-stroke">
-                <span class="text-slate-400 block text-[10px]">Groq AI Calls</span>
-                <strong id="sidebar-groq-calls" class="text-emerald-400">0 hari ini</strong>
+              <button type="button" onclick="setFilterHarga(0)" class="bg-elevated hover:bg-stroke border border-stroke text-slate-300 text-[11px] font-bold px-3 py-2.5 rounded-xl transition">
+                Reset
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- KOTAK REKOMENDASI UTAMA BPJS (MAKS 2 TERBAIK / KOSONG JIKA TIDAK LAYAK) -->
+        <section id="box-rekomendasi-bpjs" class="bg-surface border border-emerald-500/40 rounded-2xl p-4 sm:p-5 space-y-4 shadow-md"></section>
+
+        <!-- Grid Daftar Sinyal Reguler + Sidebar Panduan -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+          <!-- Sidebar Controls -->
+          <aside class="lg:col-span-4 lg:order-2 lg:sticky lg:top-32 space-y-4">
+            <div class="bg-surface border border-stroke rounded-2xl p-4 space-y-3.5 shadow-sm">
+              <div>
+                <span class="text-xs font-extrabold text-white block">Filter & Panduan Exit BPJS</span>
+                <span class="text-[11px] text-slate-400 leading-relaxed block mt-0.5">
+                  Periksa <strong class="text-white">Tanggal Call</strong> di setiap kartu sebelum masuk, lalu disiplin exit saat menyentuh <strong class="text-emerald-400">Target TP</strong> atau <strong class="text-rose-400">Cut Loss (SL)</strong>.
+                </span>
+              </div>
+
+              <div class="pt-1 border-t border-stroke/80">
+                <label class="text-[11px] font-semibold text-slate-400 block mb-1.5">Filter Klasifikasi Sinyal</label>
+                <select id="filter-status" onchange="renderKartu()" class="w-full bg-canvas border border-stroke rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 outline-none">
+                  <option value="ALL">Semua Sinyal</option>
+                  <option value="VALID BPJS">Valid BPJS</option>
+                  <option value="WATCHLIST">Watchlist</option>
+                  <option value="AVOID">Avoid</option>
+                </select>
+              </div>
+
+              <div class="bg-canvas border border-stroke rounded-xl p-3 space-y-1.5 text-[11px]">
+                <span class="font-bold text-sky-400 block">Syarat Masuk Rekomendasi Utama:</span>
+                <p class="text-slate-300 leading-relaxed">• <strong class="text-emerald-400">Skor Kelayakan ≥ 75/100</strong> (40% Winrate, 30% Dominasi Bandar ≥ 45%, 20% Jarak Modal Bandar ≤ +3%, 10% Likuiditas ≥ 5M).</p>
+                <p class="text-slate-300 leading-relaxed">• Jika sudah ada riwayat di <strong class="text-white">Riwayat Sinyal</strong>, winrate wajib <strong class="text-emerald-400">≥ 70%</strong> & Risk Makro <strong class="text-white">&lt; 7/10</strong>.</p>
+                <p class="text-slate-300 leading-relaxed">• Cek tab <button type="button" onclick="gantiMenu('history')" class="text-emerald-400 font-bold underline">Riwayat Sinyal</button> untuk melihat arsip call & status TP/SL.</p>
               </div>
             </div>
-            <button onclick="bukaModalSettings()" class="w-full bg-elevated hover:bg-stroke border border-stroke text-slate-200 text-[11px] font-bold py-2 rounded-xl transition">
-              Kelola Perizinan Pengguna
-            </button>
-          </div>
-        </aside>
 
-        <!-- Main Signal Cards Column -->
-        <div id="container-sinyal" class="lg:col-span-8 lg:order-1 space-y-4"></div>
+            <!-- Desktop-Only Macro Summary Card -->
+            <div class="hidden lg:block bg-surface border border-stroke rounded-2xl p-4 space-y-2.5 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-extrabold text-white">Ringkasan Makro Terkini</span>
+                <span id="sidebar-risk-badge" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-elevated text-emerald-400 border border-stroke">NORMAL</span>
+              </div>
+              <p id="sidebar-macro-headline" class="text-xs font-semibold text-slate-200 leading-snug">Memuat kondisi pasar...</p>
+              <button onclick="gantiMenu('berita')" class="text-[11px] font-mono font-semibold text-sky-400 hover:underline pt-1 inline-block">
+                Buka Berita & Indeks Global →
+              </button>
+            </div>
+
+            <!-- ADMIN ONLY: Telemetry Widget -->
+            <div id="admin-sidebar-card" class="hidden bg-surface border border-emerald-500/30 rounded-2xl p-4 space-y-2.5 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-extrabold text-emerald-400">Telemetri Sistem (Admin)</span>
+                <span class="text-[10px] font-mono text-slate-400">PRIVATE</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2 font-mono text-[11px]">
+                <div class="bg-canvas p-2.5 rounded-xl border border-stroke">
+                  <span class="text-slate-400 block text-[10px]">Sisa Index Alpha</span>
+                  <strong id="sidebar-ia-quota" class="text-white">5 / 5</strong>
+                </div>
+                <div class="bg-canvas p-2.5 rounded-xl border border-stroke">
+                  <span class="text-slate-400 block text-[10px]">Groq AI Calls</span>
+                  <strong id="sidebar-groq-calls" class="text-emerald-400">0 hari ini</strong>
+                </div>
+              </div>
+              <button onclick="bukaModalSettings()" class="w-full bg-elevated hover:bg-stroke border border-stroke text-slate-200 text-[11px] font-bold py-2 rounded-xl transition">
+                Kelola Perizinan Pengguna
+              </button>
+            </div>
+          </aside>
+
+          <!-- Main Signal Cards Column -->
+          <div class="lg:col-span-8 lg:order-1 space-y-4">
+            <div class="flex items-center justify-between px-1">
+              <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-300">Daftar Lengkap Sinyal Harian</h3>
+              <span id="count-reguler-bpjs" class="text-[11px] font-mono text-slate-400">0 emiten</span>
+            </div>
+            <div id="container-sinyal" class="space-y-4"></div>
+          </div>
+
+        </div>
       </div>
 
       <!-- VIEW 1B: RADAR SCALPING LIVE (09:00 - 15:50 WIB) -->
-      <div id="view-scalping" class="hidden space-y-4">
-        <div class="bg-surface border border-stroke rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-sm">
+      <div id="view-scalping" class="hidden space-y-5">
+        <div class="bg-surface border border-stroke rounded-2xl p-4 sm:p-5 space-y-4 shadow-sm">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div class="flex items-center gap-2">
@@ -293,22 +357,64 @@
             </div>
           </div>
 
-          <div class="pt-3 border-t border-stroke/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <p class="text-[11px] text-slate-300">
-              Setiap kartu menampilkan <strong class="text-white">Tanggal & Jam Call</strong> beserta target <strong class="text-emerald-400">TP1 / TP2</strong> dan <strong class="text-rose-400">Cut Loss (SL)</strong>.
-            </p>
-            <div class="sm:w-72 shrink-0">
-              <select id="filter-scalp-status" onchange="renderScalping()" class="w-full bg-canvas border border-stroke rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 outline-none">
-                <option value="ALL">Semua Radar Intraday</option>
-                <option value="HOT BREAKOUT">Hot Breakout (Vol ≥ 2x & Above VWAP)</option>
-                <option value="SCALP READY">Scalp Ready</option>
-                <option value="MOMENTUM WATCH">Momentum Watch</option>
-              </select>
+          <!-- Filter Harga Saham (Tersinkronisasi) -->
+          <div class="pt-3 border-t border-stroke/80 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-bold text-slate-300">Filter Harga Saham (Budget Modal 1 Lot)</span>
+              <span id="label-aktif-harga-scalp" class="text-[10px] font-mono font-bold text-emerald-400">Filter: Semua Harga</span>
+            </div>
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 flex-1">
+                <button type="button" data-price-btn="0" onclick="setFilterHarga(0)"
+                  class="price-preset-btn border border-emerald-500/60 bg-emerald-500/15 text-emerald-300 rounded-xl px-3 py-2 text-left transition">
+                  <span class="text-xs font-extrabold block">Semua Harga</span>
+                  <span class="text-[10px] font-mono opacity-80">Tanpa batas</span>
+                </button>
+                <button type="button" data-price-btn="200" onclick="setFilterHarga(200)"
+                  class="price-preset-btn border border-stroke bg-canvas hover:bg-elevated text-slate-300 rounded-xl px-3 py-2 text-left transition">
+                  <span class="text-xs font-extrabold block">≤ Rp 200</span>
+                  <span class="text-[10px] font-mono text-slate-400">±Rp 20 rb/lot</span>
+                </button>
+                <button type="button" data-price-btn="500" onclick="setFilterHarga(500)"
+                  class="price-preset-btn border border-stroke bg-canvas hover:bg-elevated text-slate-300 rounded-xl px-3 py-2 text-left transition">
+                  <span class="text-xs font-extrabold block">≤ Rp 500</span>
+                  <span class="text-[10px] font-mono text-slate-400">±Rp 50 rb/lot</span>
+                </button>
+                <button type="button" data-price-btn="1000" onclick="setFilterHarga(1000)"
+                  class="price-preset-btn border border-stroke bg-canvas hover:bg-elevated text-slate-300 rounded-xl px-3 py-2 text-left transition">
+                  <span class="text-xs font-extrabold block">≤ Rp 1.000</span>
+                  <span class="text-[10px] font-mono text-slate-400">±Rp 100 rb/lot</span>
+                </button>
+              </div>
+
+              <div class="flex items-center gap-2 lg:w-72 shrink-0">
+                <div class="relative flex-1">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-mono text-slate-400">Rp</span>
+                  <input id="input-max-harga-scalp" type="number" min="50" step="10" placeholder="Maks harga..."
+                    oninput="onInputMaxHarga(this.value)"
+                    class="w-full bg-canvas border border-stroke focus:border-emerald-500 rounded-xl pl-8 pr-3 py-2 text-xs font-mono font-bold text-white outline-none" />
+                </div>
+                <select id="filter-scalp-status" onchange="renderScalping()" class="bg-canvas border border-stroke rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-200 outline-none">
+                  <option value="ALL">Semua Status</option>
+                  <option value="HOT BREAKOUT">Hot Breakout</option>
+                  <option value="SCALP READY">Scalp Ready</option>
+                  <option value="MOMENTUM WATCH">Watch</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
 
-        <div id="container-scalping" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        <!-- KOTAK REKOMENDASI UTAMA SCALPING (MAKS 2 TERBAIK / KOSONG JIKA TIDAK LAYAK) -->
+        <section id="box-rekomendasi-scalp" class="bg-surface border border-emerald-500/40 rounded-2xl p-4 sm:p-5 space-y-4 shadow-md"></section>
+
+        <div class="space-y-3">
+          <div class="flex items-center justify-between px-1">
+            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-300">Daftar Lengkap Radar Intraday</h3>
+            <span id="count-reguler-scalp" class="text-[11px] font-mono text-slate-400">0 emiten</span>
+          </div>
+          <div id="container-scalping" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
       </div>
 
       <!-- VIEW 1C: RIWAYAT SINYAL & HASIL TP/SL (HISTORY) -->
@@ -317,7 +423,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 class="text-sm sm:text-base font-extrabold text-white">Riwayat Call Signal & Evaluasi TP / SL</h2>
-              <p class="text-xs text-slate-400 mt-0.5">Arsip tanggal call sinyal sebelumnya beserta status pencapaian Target Profit (TP) atau Cut Loss (SL) agar mudah dicocokkan saat exit.</p>
+              <p class="text-xs text-slate-400 mt-0.5">Arsip tanggal call sinyal sebelumnya beserta status pencapaian Target Profit (TP) atau Cut Loss (SL) yang menjadi dasar perhitungan Winrate Rekomendasi Utama.</p>
             </div>
             <div class="flex gap-2.5 text-xs font-mono bg-canvas px-3.5 py-2.5 rounded-xl border border-stroke shrink-0">
               <div><span class="text-slate-500 block text-[10px]">Total Call</span><strong id="hist-total" class="text-white">0</strong></div>
@@ -409,7 +515,7 @@
           </div>
         </div>
         <p class="text-xs text-slate-300 leading-relaxed">
-          Platform <strong class="text-white">ALPHAFLOW IDX</strong> oleh <strong class="text-white">STAR GRUP</strong> dibangun dengan semangat kata-kata Purbaya: <strong class="text-emerald-400">“Kita akan kaya bersama.”</strong> Seluruh sinyal, area beli, target TP, maupun batas Cut Loss (SL) disajikan sebagai referensi analisis data dan alat bantu pengambilan keputusan. Perdagangan saham memiliki risiko fluktuasi harga—<strong class="text-emerald-300">jika mencapai Target Profit (TP) mari kita bersyukur bersama, dan jika menyentuh Cut Loss (SL) tetap disiplin menjaga risiko serta jangan menghina atau menyalahkan kami.</strong> Segala keputusan eksekusi dan risiko transaksi sepenuhnya menjadi tanggung jawab masing-masing pengguna.
+          Platform <strong class="text-white">ALPHAFLOW IDX</strong> oleh <strong class="text-white">STAR GRUP</strong> dibangun dengan semangat kata-kata Purbaya: <strong class="text-emerald-400">“Kita akan kaya bersama.”</strong> Seluruh rekomendasi, sinyal, area beli, target TP, maupun batas Cut Loss (SL) disajikan sebagai referensi analisis data dan alat bantu pengambilan keputusan. Perdagangan saham memiliki risiko fluktuasi harga—<strong class="text-emerald-300">jika mencapai Target Profit (TP) mari kita bersyukur bersama, dan jika menyentuh Cut Loss (SL) tetap disiplin menjaga risiko serta jangan menghina atau menyalahkan kami.</strong> Segala keputusan eksekusi dan risiko transaksi sepenuhnya menjadi tanggung jawab masing-masing pengguna.
         </p>
       </section>
 
@@ -490,6 +596,7 @@
     let isAdminUser = false;
     let listenersStarted = false;
     let activeUserRef = null;
+    let maxHargaFilter = 0; // 0 = Semua Harga
 
     let appState = {
       tanggal_bursa: "-",
@@ -562,6 +669,143 @@
     function updateClockWIB() {
       const wib = getWIBDate();
       document.getElementById("clock-wib").textContent = `${String(wib.getHours()).padStart(2, "0")}:${String(wib.getMinutes()).padStart(2, "0")} WIB`;
+    }
+
+    // FILTER HARGA TERPUSAT (SINKRON BPJS & SCALPING)
+    function setFilterHarga(nominal) {
+      maxHargaFilter = Number(nominal) || 0;
+      const inBpjs = document.getElementById("input-max-harga-bpjs");
+      const inScalp = document.getElementById("input-max-harga-scalp");
+      if (inBpjs) inBpjs.value = maxHargaFilter > 0 ? maxHargaFilter : "";
+      if (inScalp) inScalp.value = maxHargaFilter > 0 ? maxHargaFilter : "";
+      perbaruiTampilanFilterHarga();
+      renderKartu();
+      renderScalping();
+    }
+
+    function onInputMaxHarga(val) {
+      const num = Number(val);
+      maxHargaFilter = num > 0 ? num : 0;
+      const inBpjs = document.getElementById("input-max-harga-bpjs");
+      const inScalp = document.getElementById("input-max-harga-scalp");
+      if (inBpjs && Number(inBpjs.value) !== maxHargaFilter) inBpjs.value = maxHargaFilter > 0 ? maxHargaFilter : "";
+      if (inScalp && Number(inScalp.value) !== maxHargaFilter) inScalp.value = maxHargaFilter > 0 ? maxHargaFilter : "";
+      perbaruiTampilanFilterHarga();
+      renderKartu();
+      renderScalping();
+    }
+
+    function perbaruiTampilanFilterHarga() {
+      const labelText = maxHargaFilter > 0
+        ? `Filter: ≤ ${formatIdr(maxHargaFilter)} (±${formatIdr(maxHargaFilter * 100)}/lot)`
+        : "Filter: Semua Harga";
+      const lbl1 = document.getElementById("label-aktif-harga-bpjs");
+      const lbl2 = document.getElementById("label-aktif-harga-scalp");
+      if (lbl1) lbl1.textContent = labelText;
+      if (lbl2) lbl2.textContent = labelText;
+
+      document.querySelectorAll(".price-preset-btn").forEach(btn => {
+        const btnVal = Number(btn.getAttribute("data-price-btn"));
+        const isActive = btnVal === maxHargaFilter;
+        btn.className = isActive
+          ? "price-preset-btn border border-emerald-500/60 bg-emerald-500/15 text-emerald-300 rounded-xl px-3 py-2 text-left transition"
+          : "price-preset-btn border border-stroke bg-canvas hover:bg-elevated text-slate-300 rounded-xl px-3 py-2 text-left transition";
+      });
+    }
+
+    // HITUNG WINRATE HISTORIS EMITEN DARI bpjs_history
+    function getStatistikWinrateEmiten(ticker) {
+      const allHist = normalizeHistoryItems();
+      const finished = allHist.filter(
+        h => h.ticker === ticker && (h.status_kategori === "TP" || h.status_kategori === "SL")
+      );
+      const tp = finished.filter(h => h.status_kategori === "TP").length;
+      const sl = finished.filter(h => h.status_kategori === "SL").length;
+      const total = tp + sl;
+      if (total === 0) {
+        return { hasHistory: false, winrate: null, tp: 0, sl: 0, total: 0 };
+      }
+      return {
+        hasHistory: true,
+        winrate: Math.round((tp / total) * 100),
+        tp,
+        sl,
+        total
+      };
+    }
+
+    // SKOR KELAYAKAN BPJS (0 - 100 POIN)
+    // 40% Winrate Historis + 30% Dominasi Bandar (>=45%) + 20% Jarak Modal Bandar (<=+3%) + 10% Likuiditas (>=5M)
+    function evaluasiKelayakanBPJS(item) {
+      const wrStat = getStatistikWinrateEmiten(item.ticker);
+      const isAvoid = String(item.sinyal || "").toUpperCase() === "AVOID";
+
+      // 1. Komponen Winrate (40 poin)
+      let ptsWinrate = 24; // Netral 60% untuk emiten baru yang belum punya riwayat selesai
+      if (wrStat.hasHistory) {
+        ptsWinrate = (wrStat.winrate / 100) * 40;
+      }
+
+      // 2. Komponen Dominasi Bandar Top 3 (30 poin)
+      const dom = Number(item.dominasi_top3 || 0);
+      const ptsBandar = dom >= 45
+        ? Math.min(30, 22 + ((dom - 45) / 25) * 8)
+        : Math.max(0, (dom / 45) * 18);
+
+      // 3. Komponen Jarak Harga Close vs Avg Modal Bandar (20 poin)
+      const selisih = Number(item.selisih_modal_persen ?? 0);
+      let ptsModal = 0;
+      if (selisih <= 0) ptsModal = 20;
+      else if (selisih <= 3) ptsModal = 20 - (selisih / 3) * 5;
+      else ptsModal = Math.max(0, 10 - (selisih - 3) * 3);
+
+      // 4. Komponen Likuiditas Harian (10 poin)
+      const valM = Number(item.nilai_transaksi_miliar || 0);
+      const ptsLikuiditas = valM >= 5
+        ? Math.min(10, 7 + ((valM - 5) / 20) * 3)
+        : Math.max(0, (valM / 5) * 4);
+
+      const skor = Math.round(ptsWinrate + ptsBandar + ptsModal + ptsLikuiditas);
+      const lolosWinrate = !wrStat.hasHistory || wrStat.winrate >= 70;
+      const layak = !isAvoid && lolosWinrate && skor >= 75;
+
+      return { skor, layak, wrStat };
+    }
+
+    // SKOR KELAYAKAN SCALPING INTRADAY (0 - 100 POIN)
+    // 40% Winrate Historis + 30% Lonjakan Volume (>=2x) & Status + 20% Posisi di Atas VWAP + 10% Likuiditas (>=1.5M)
+    function evaluasiKelayakanScalp(s) {
+      const wrStat = getStatistikWinrateEmiten(s.ticker);
+
+      // 1. Komponen Winrate (40 poin)
+      let ptsWinrate = 24;
+      if (wrStat.hasHistory) {
+        ptsWinrate = (wrStat.winrate / 100) * 40;
+      }
+
+      // 2. Komponen Lonjakan Volume & Status Breakout/Ready (30 poin)
+      const relVol = Number(s.lonjakan_volume || 0);
+      const statusUpper = String(s.status_scalp || "").toUpperCase();
+      const statusBonus = statusUpper === "HOT BREAKOUT" ? 12 : statusUpper === "SCALP READY" ? 9 : 4;
+      const volPts = relVol >= 2.0
+        ? Math.min(18, 13 + ((relVol - 2.0) / 3.0) * 5)
+        : Math.max(0, (relVol / 2.0) * 9);
+      const ptsMomentum = statusBonus + volPts;
+
+      // 3. Komponen Posisi Harga di Atas VWAP (20 poin)
+      const ptsVwap = s.above_vwap ? 20 : 5;
+
+      // 4. Komponen Likuiditas Intraday (10 poin)
+      const valM = Number(s.nilai_transaksi_miliar || 0);
+      const ptsLikuiditas = valM >= 1.5
+        ? Math.min(10, 7 + ((valM - 1.5) / 8.5) * 3)
+        : Math.max(0, (valM / 1.5) * 4);
+
+      const skor = Math.round(ptsWinrate + ptsMomentum + ptsVwap + ptsLikuiditas);
+      const lolosWinrate = !wrStat.hasHistory || wrStat.winrate >= 70;
+      const layak = lolosWinrate && skor >= 75;
+
+      return { skor, layak, wrStat };
     }
 
     function initFirebaseApp() {
@@ -724,6 +968,8 @@
       db.ref("bpjs_history").on("value", (snap) => {
         historyRawData = snap.val();
         renderHistory();
+        renderKartu();
+        renderScalping();
       });
 
       // 4. Berita Valid & Makro Global
@@ -732,6 +978,8 @@
         if (data) {
           newsState = data;
           perbaruiTampilanBeritaDanMakro();
+          perbaruiTampilanSinyal();
+          renderScalping();
         }
       });
 
@@ -927,6 +1175,101 @@
       renderFunnel();
     }
 
+    // RENDER KOTAK REKOMENDASI UTAMA SCALPING
+    function renderRekomendasiScalping(listByPrice) {
+      const box = document.getElementById("box-rekomendasi-scalp");
+      if (!box) return;
+
+      const isHalted = Boolean(appState.shock_halt || newsState.shock_halt);
+      const riskScore = Number(newsState.risk_score || 3);
+
+      if (isHalted || riskScore >= 7) {
+        box.innerHTML = `
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <span class="text-xs font-extrabold text-amber-300 uppercase tracking-wider">★ REKOMENDASI UTAMA SCALPING (WINRATE & SKOR TINGGI)</span>
+            <span class="px-2.5 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/40 text-[10px] font-mono font-bold text-rose-400">STANDBY • RISK ${riskScore}/10</span>
+          </div>
+          <div class="bg-canvas border border-stroke rounded-xl p-4 text-center space-y-1">
+            <p class="text-xs font-bold text-slate-200">Rekomendasi Utama Dikosongkan Sementara</p>
+            <p class="text-[11px] text-slate-400">Risiko makro saat ini berada di level ${riskScore}/10. Sistem menahan rekomendasi agresif demi menjaga keamanan modal.</p>
+          </div>`;
+        return;
+      }
+
+      const candidates = listByPrice
+        .map(s => ({ item: s, eval: evaluasiKelayakanScalp(s) }))
+        .filter(x => x.eval.layak)
+        .sort((a, b) => b.eval.skor - a.eval.skor || (b.item.lonjakan_volume || 0) - (a.item.lonjakan_volume || 0))
+        .slice(0, 2);
+
+      if (candidates.length === 0) {
+        box.innerHTML = `
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <span class="text-xs font-extrabold text-emerald-400 uppercase tracking-wider">★ REKOMENDASI UTAMA SCALPING (WINRATE & SKOR TINGGI)</span>
+            <span class="px-2.5 py-0.5 rounded-md bg-elevated border border-stroke text-[10px] font-mono font-bold text-slate-400">0 PILIHAN LAYAK</span>
+          </div>
+          <div class="bg-canvas border border-stroke rounded-xl p-4 text-center space-y-1">
+            <p class="text-xs font-bold text-slate-200">Belum Ada Setup Scalping dengan Skor ≥ 75 & Winrate Tinggi</p>
+            <p class="text-[11px] text-slate-400">
+              ${maxHargaFilter > 0 ? `Pada batas harga ≤ ${formatIdr(maxHargaFilter)}, belum` : "Belum"} ada emiten intraday yang memenuhi standar kelayakan tinggi. Pantau daftar radar di bawah dengan disiplin SL.
+            </p>
+          </div>`;
+        return;
+      }
+
+      const callDate = scalpState.tanggal && scalpState.tanggal !== "-" ? scalpState.tanggal : "-";
+      const callTime = scalpState.updated_wib && scalpState.updated_wib !== "-" ? scalpState.updated_wib : "-";
+
+      box.innerHTML = `
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <div>
+            <span class="text-xs sm:text-sm font-extrabold text-emerald-400 uppercase tracking-wider">★ REKOMENDASI UTAMA SCALPING (PROBABILITAS TINGGI)</span>
+            <p class="text-[11px] text-slate-400">Maksimal 2 emiten terbaik dengan Skor Kelayakan ≥ 75/100, likuiditas aman, & winrate historis teruji.</p>
+          </div>
+          <span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-[10px] font-mono font-bold text-emerald-300">
+            ${candidates.length} PILIHAN TERBAIK
+          </span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          ${candidates.map(({ item: s, eval: ev }) => {
+            const wrLabel = ev.wrStat.hasHistory
+              ? `Winrate ${ev.wrStat.winrate}% (${ev.wrStat.tp}/${ev.wrStat.total})`
+              : "Setup Baru (Skor Tinggi)";
+            const itemCallDate = s.tanggal_call || callDate;
+            const itemCallTime = s.jam_call || callTime;
+            return `
+              <div class="bg-canvas border border-emerald-500/50 rounded-xl p-4 space-y-3 shadow-md animate-card">
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="text-xl font-extrabold font-mono text-white">${s.ticker}</span>
+                      <span class="px-2 py-0.5 rounded bg-emerald-500 text-canvas text-[10px] font-mono font-extrabold">SKOR ${ev.skor}/100</span>
+                      <span class="px-2 py-0.5 rounded bg-elevated border border-stroke text-[10px] font-mono font-bold text-sky-400">${wrLabel}</span>
+                    </div>
+                    <p class="text-[10px] font-mono text-slate-400 mt-1">Call: <strong class="text-white">${itemCallDate}</strong> • ${itemCallTime} • Vol ${s.lonjakan_volume}x</p>
+                  </div>
+                  <button onclick="salinSinyalScalping('${s.ticker}')" class="bg-elevated hover:bg-stroke border border-stroke text-slate-200 text-[10px] font-bold px-2.5 py-1 rounded-lg shrink-0">Salin</button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 text-xs font-mono">
+                  <div class="bg-surface border border-stroke rounded-lg p-2">
+                    <span class="text-[9px] text-slate-400 block">Max Beli</span>
+                    <strong class="text-amber-400 text-xs">${formatIdr(s.area_beli_max)}</strong>
+                  </div>
+                  <div class="bg-surface border border-stroke rounded-lg p-2">
+                    <span class="text-[9px] text-slate-400 block">Target TP1</span>
+                    <strong class="text-emerald-400 text-xs">${formatIdr(s.target_tp1)}</strong>
+                  </div>
+                  <div class="bg-surface border border-stroke rounded-lg p-2">
+                    <span class="text-[9px] text-slate-400 block">Cut Loss (SL)</span>
+                    <strong class="text-rose-400 text-xs">${formatIdr(s.cut_loss)}</strong>
+                  </div>
+                </div>
+              </div>`;
+          }).join("")}
+        </div>`;
+    }
+
     function renderScalping() {
       const container = document.getElementById("container-scalping");
       const badgeSession = document.getElementById("scalp-session-badge");
@@ -971,15 +1314,30 @@
           : "Menunggu pemindaian sesi aktif...";
       }
 
+      // Filter berdasarkan harga terlebih dahulu untuk Kotak Rekomendasi Utama
+      const listByPrice = listRaw.filter(s => {
+        const harga = Number(s.harga_sekarang || 0);
+        return maxHargaFilter === 0 || (harga > 0 && harga <= maxHargaFilter);
+      });
+
+      renderRekomendasiScalping(listByPrice);
+
       const filterVal = document.getElementById("filter-scalp-status")?.value || "ALL";
-      const list = listRaw.filter(s => filterVal === "ALL" || s.status_scalp === filterVal);
+      const list = listByPrice.filter(s => filterVal === "ALL" || s.status_scalp === filterVal);
+
+      const countEl = document.getElementById("count-reguler-scalp");
+      if (countEl) countEl.textContent = `${list.length} emiten`;
 
       if (list.length === 0) {
         container.innerHTML = `
           <div class="md:col-span-2 bg-surface border border-stroke rounded-2xl p-10 text-center space-y-2 shadow-sm">
-            <p class="text-sm font-bold text-slate-200">Belum Ada Lonjakan Intraday Terdeteksi</p>
+            <p class="text-sm font-bold text-slate-200">
+              ${maxHargaFilter > 0 ? `Tidak Ada Sinyal Scalping dengan Harga ≤ ${formatIdr(maxHargaFilter)}` : "Belum Ada Lonjakan Intraday Terdeteksi"}
+            </p>
             <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
-              Radar otomatis memindai arus transaksi 5 menit dan rasio volume setiap 2 menit selama sesi perdagangan BEI berlangsung (09:00 – 15:50 WIB).
+              ${maxHargaFilter > 0
+                ? "Coba naikkan batas filter harga atau pilih 'Semua Harga' untuk melihat seluruh radar aktif."
+                : "Radar otomatis memindai arus transaksi 5 menit dan rasio volume setiap 2 menit selama sesi perdagangan BEI berlangsung (09:00 – 15:50 WIB)."}
             </p>
           </div>`;
         return;
@@ -997,6 +1355,8 @@
         const harga = s.harga_sekarang || 1;
         const itemCallDate = s.tanggal_call || callDate;
         const itemCallTime = s.jam_call || callTime;
+        const ev = evaluasiKelayakanScalp(s);
+        const wrText = ev.wrStat.hasHistory ? `WR ${ev.wrStat.winrate}% (${ev.wrStat.tp}/${ev.wrStat.total})` : "Baru";
 
         return `
           <article class="bg-surface border ${isHot ? 'border-emerald-500/40' : 'border-stroke'} rounded-2xl p-4 sm:p-5 space-y-4 shadow-md animate-card">
@@ -1007,11 +1367,13 @@
                   <span class="text-xs font-mono font-bold text-emerald-400 bg-elevated border border-stroke px-2 py-0.5 rounded-lg">${s.persen_harian >= 0 ? '+' : ''}${s.persen_harian}%</span>
                   <span class="text-[11px] font-mono text-slate-400">Val Rp ${s.nilai_transaksi_miliar}M</span>
                 </div>
-                <div class="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-canvas border border-stroke text-[10px] font-mono text-sky-400">
-                  <span>Call Signal:</span>
-                  <strong class="text-white">${itemCallDate}</strong>
-                  <span class="text-slate-600">•</span>
-                  <span>${itemCallTime}</span>
+                <div class="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-canvas border border-stroke text-[10px] font-mono text-sky-400">
+                    Call: <strong class="text-white">${itemCallDate}</strong> • ${itemCallTime}
+                  </span>
+                  <span class="px-2 py-0.5 rounded-md bg-elevated border border-stroke text-[10px] font-mono font-bold ${ev.layak ? 'text-emerald-400' : 'text-slate-300'}">
+                    Skor ${ev.skor}/100 • ${wrText}
+                  </span>
                 </div>
                 <p class="text-[11px] font-mono text-slate-300 mt-1.5">
                   5m: <span class="text-emerald-400 font-bold">+${s.lonjakan_5m}%</span>
@@ -1071,10 +1433,11 @@
     function salinSinyalScalping(ticker) {
       const s = (scalpState.daftar_scalping || []).find(x => x.ticker === ticker);
       if (!s) return;
+      const ev = evaluasiKelayakanScalp(s);
       const teks = [
         `RADAR SCALPING LIVE — STAR GRUP`,
         `Tanggal Call: ${s.tanggal_call || scalpState.tanggal || '-'} (${s.jam_call || scalpState.updated_wib || '-'})`,
-        `Emiten: ${s.ticker} [${s.status_scalp}]`,
+        `Emiten: ${s.ticker} [${s.status_scalp} • Skor ${ev.skor}/100]`,
         `Harga Call: ${formatIdr(s.harga_sekarang)} (${s.persen_harian >= 0 ? '+' : ''}${s.persen_harian}% | 5m: +${s.lonjakan_5m}% | Vol: ${s.lonjakan_volume}x)`,
         `Batas Max Beli: ${formatIdr(s.area_beli_max)}`,
         `TP1 (+1.5%): ${formatIdr(s.target_tp1)} | TP2 (+2.5%): ${formatIdr(s.target_tp2)}`,
@@ -1158,7 +1521,6 @@
         }
       }
 
-      // Sertakan juga sinyal aktif hari ini agar log tanggal call terbaru langsung terlihat di History
       if (Array.isArray(appState.daftar_sinyal) && appState.daftar_sinyal.length > 0) {
         const jamBpjs = formatWaktuWIB(appState.updated_at);
         appState.daftar_sinyal.forEach(s => {
@@ -1273,12 +1635,7 @@
       ["sinyal", "scalping", "history", "berita", "funnel"].forEach(t => {
         const viewEl = document.getElementById(`view-${t}`);
         if (!viewEl) return;
-        if (t === "sinyal") {
-          viewEl.classList.toggle("hidden", t !== tab);
-          viewEl.classList.toggle("grid", t === tab);
-        } else {
-          viewEl.classList.toggle("hidden", t !== tab);
-        }
+        viewEl.classList.toggle("hidden", t !== tab);
 
         const btn = document.getElementById(`nav-${t}`);
         if (!btn) return;
@@ -1302,10 +1659,11 @@
       if (!item) return;
       const tanggalCall = item.tanggal_call || appState.tanggal_bursa || "-";
       const jamCall = formatWaktuWIB(appState.updated_at);
+      const ev = evaluasiKelayakanBPJS(item);
       const teks = [
         `ALPHAFLOW IDX — STAR GRUP`,
         `Tanggal Call: ${tanggalCall} (${jamCall})`,
-        `Emiten: ${item.ticker} (${item.sinyal})`,
+        `Emiten: ${item.ticker} (${item.sinyal} • Skor ${ev.skor}/100)`,
         `Status Akumulasi: ${item.status_bandar} (Dominasi Top 3: ${item.dominasi_top3}%)`,
         `Close / Avg Bandar: ${formatIdr(item.harga_close)} / Rp ${item.buy_avg_bandar}`,
         `Batas Max Beli 09:00: ${formatIdr(item.max_beli_pagi)}`,
@@ -1371,11 +1729,116 @@
       }
     }
 
+    // RENDER KOTAK REKOMENDASI UTAMA BPJS (MAKS 2 TERBAIK / KOSONG JIKA TIDAK LAYAK)
+    function renderRekomendasiBPJS(listByPrice) {
+      const box = document.getElementById("box-rekomendasi-bpjs");
+      if (!box) return;
+
+      const isHalted = Boolean(appState.shock_halt || newsState.shock_halt);
+      const riskScore = Number(newsState.risk_score || 3);
+
+      if (isHalted || riskScore >= 7) {
+        box.innerHTML = `
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <span class="text-xs font-extrabold text-amber-300 uppercase tracking-wider">★ REKOMENDASI UTAMA BPJS (WINRATE & SKOR TINGGI)</span>
+            <span class="px-2.5 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/40 text-[10px] font-mono font-bold text-rose-400">STANDBY • RISK ${riskScore}/10</span>
+          </div>
+          <div class="bg-canvas border border-stroke rounded-xl p-4 text-center space-y-1">
+            <p class="text-xs font-bold text-slate-200">Rekomendasi Utama Dikosongkan Sementara</p>
+            <p class="text-[11px] text-slate-400">Risiko makro saat ini berada di level ${riskScore}/10. Sistem menahan rekomendasi utama demi melindungi modal dari volatilitas tinggi.</p>
+          </div>`;
+        return;
+      }
+
+      const candidates = listByPrice
+        .map(item => ({ item, eval: evaluasiKelayakanBPJS(item) }))
+        .filter(x => x.eval.layak)
+        .sort((a, b) => b.eval.skor - a.eval.skor || (b.item.dominasi_top3 || 0) - (a.item.dominasi_top3 || 0))
+        .slice(0, 2);
+
+      if (candidates.length === 0) {
+        box.innerHTML = `
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <span class="text-xs font-extrabold text-emerald-400 uppercase tracking-wider">★ REKOMENDASI UTAMA BPJS (WINRATE & SKOR TINGGI)</span>
+            <span class="px-2.5 py-0.5 rounded-md bg-elevated border border-stroke text-[10px] font-mono font-bold text-slate-400">0 PILIHAN LAYAK</span>
+          </div>
+          <div class="bg-canvas border border-stroke rounded-xl p-4 text-center space-y-1">
+            <p class="text-xs font-bold text-slate-200">Belum Ada Sinyal dengan Skor ≥ 75 & Winrate Tinggi</p>
+            <p class="text-[11px] text-slate-400">
+              ${maxHargaFilter > 0 ? `Pada filter harga ≤ ${formatIdr(maxHargaFilter)}, belum` : "Belum"} ada emiten yang lolos standar ketat probabilitas tinggi hari ini. Pantau daftar sinyal reguler di bawah dengan disiplin SL.
+            </p>
+          </div>`;
+        return;
+      }
+
+      const jamUpdateWIB = formatWaktuWIB(appState.updated_at);
+
+      box.innerHTML = `
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <div>
+            <span class="text-xs sm:text-sm font-extrabold text-emerald-400 uppercase tracking-wider">★ REKOMENDASI UTAMA BPJS (PROBABILITAS TINGGI)</span>
+            <p class="text-[11px] text-slate-400">Maksimal 2 pilihan terbaik dengan Skor Kelayakan ≥ 75/100, akumulasi bandar pekat, & winrate teruji.</p>
+          </div>
+          <span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-[10px] font-mono font-bold text-emerald-300">
+            ${candidates.length} PILIHAN TERBAIK
+          </span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          ${candidates.map(({ item, eval: ev }) => {
+            const tanggalCall = item.tanggal_call || appState.tanggal_bursa || "-";
+            const wrLabel = ev.wrStat.hasHistory
+              ? `Winrate ${ev.wrStat.winrate}% (${ev.wrStat.tp}/${ev.wrStat.total})`
+              : "Setup Kuat (Baru)";
+            return `
+              <div class="bg-canvas border border-emerald-500/50 rounded-xl p-4 space-y-3 shadow-md animate-card">
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="text-xl font-extrabold font-mono text-white">${item.ticker}</span>
+                      <span class="px-2 py-0.5 rounded bg-emerald-500 text-canvas text-[10px] font-mono font-extrabold">SKOR ${ev.skor}/100</span>
+                      <span class="px-2 py-0.5 rounded bg-elevated border border-stroke text-[10px] font-mono font-bold text-sky-400">${wrLabel}</span>
+                    </div>
+                    <p class="text-[10px] font-mono text-slate-400 mt-1">
+                      Call: <strong class="text-white">${tanggalCall}</strong> • ${jamUpdateWIB} • Dom Top 3: <strong class="text-emerald-400">${item.dominasi_top3}%</strong>
+                    </p>
+                  </div>
+                  <button onclick="salinPlanEmiten('${item.ticker}')" class="bg-elevated hover:bg-stroke border border-stroke text-slate-200 text-[10px] font-bold px-2.5 py-1 rounded-lg shrink-0">Salin Plan</button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 text-xs font-mono">
+                  <div class="bg-surface border border-stroke rounded-lg p-2">
+                    <span class="text-[9px] text-slate-400 block">Max Beli 09:00</span>
+                    <strong class="text-amber-400 text-xs">${formatIdr(item.max_beli_pagi)}</strong>
+                  </div>
+                  <div class="bg-surface border border-stroke rounded-lg p-2">
+                    <span class="text-[9px] text-slate-400 block">Target TP (+3%)</span>
+                    <strong class="text-emerald-400 text-xs">${formatIdr(item.target_tp)}</strong>
+                  </div>
+                  <div class="bg-surface border border-stroke rounded-lg p-2">
+                    <span class="text-[9px] text-slate-400 block">Cut Loss (SL)</span>
+                    <strong class="text-rose-400 text-xs">${formatIdr(item.cut_loss)}</strong>
+                  </div>
+                </div>
+              </div>`;
+          }).join("")}
+        </div>`;
+    }
+
     function renderKartu() {
       const container = document.getElementById("container-sinyal");
       const isHalted = Boolean(appState.shock_halt || newsState.shock_halt);
 
+      // Filter harga terlebih dahulu
+      const listByPrice = (appState.daftar_sinyal || []).filter(item => {
+        const harga = Number(item.harga_close || 0);
+        return maxHargaFilter === 0 || (harga > 0 && harga <= maxHargaFilter);
+      });
+
+      renderRekomendasiBPJS(listByPrice);
+
       if (isHalted) {
+        const countEl = document.getElementById("count-reguler-bpjs");
+        if (countEl) countEl.textContent = "0 emiten (HALT)";
         container.innerHTML = `
           <div class="bg-surface border border-rose-500/40 rounded-2xl p-8 text-center space-y-3 shadow-md animate-card">
             <span class="inline-block px-3 py-1 rounded-lg bg-rose-500/15 text-rose-400 border border-rose-500/30 text-xs font-mono font-bold">
@@ -1395,15 +1858,24 @@
       }
 
       const filterStatus = document.getElementById("filter-status").value;
-      const list = (appState.daftar_sinyal || []).filter(item =>
+      const list = listByPrice.filter(item =>
         filterStatus === "ALL" || item.sinyal === filterStatus
       );
+
+      const countEl = document.getElementById("count-reguler-bpjs");
+      if (countEl) countEl.textContent = `${list.length} emiten`;
 
       if (list.length === 0) {
         container.innerHTML = `
           <div class="bg-surface border border-stroke rounded-2xl p-10 text-center space-y-2 shadow-sm">
-            <p class="text-sm font-bold text-slate-200">Menunggu Jadwal Pembaruan Otomatis 08:00 WIB</p>
-            <p class="text-xs text-slate-400">Sistem STAR GRUP memperbarui sinyal secara otomatis setiap pagi sebelum sesi pembukaan BEI.</p>
+            <p class="text-sm font-bold text-slate-200">
+              ${maxHargaFilter > 0 ? `Tidak Ada Sinyal dengan Harga ≤ ${formatIdr(maxHargaFilter)}` : "Menunggu Jadwal Pembaruan Otomatis 08:00 WIB"}
+            </p>
+            <p class="text-xs text-slate-400">
+              ${maxHargaFilter > 0
+                ? "Silakan naikkan batas filter harga atau pilih 'Semua Harga' untuk melihat seluruh daftar sinyal."
+                : "Sistem STAR GRUP memperbarui sinyal secara otomatis setiap pagi sebelum sesi pembukaan BEI."}
+            </p>
           </div>`;
         return;
       }
@@ -1418,6 +1890,8 @@
           : "bg-rose-500/15 text-rose-400 border-rose-500/40";
 
         const tanggalCall = item.tanggal_call || appState.tanggal_bursa || "-";
+        const ev = evaluasiKelayakanBPJS(item);
+        const wrText = ev.wrStat.hasHistory ? `WR ${ev.wrStat.winrate}% (${ev.wrStat.tp}/${ev.wrStat.total})` : "Baru";
 
         const buyersHtml = (item.top_buyers || []).map(b => `
           <div class="flex justify-between items-center text-[11px] py-1.5 border-b border-stroke/60 last:border-0">
@@ -1440,11 +1914,13 @@
                   <span class="text-xs font-mono font-bold text-emerald-400 bg-elevated border border-stroke px-2.5 py-0.5 rounded-lg">${item.persen_naik >= 0 ? '+' : ''}${item.persen_naik}%</span>
                   <span class="text-[11px] font-mono text-slate-400">Val Rp ${item.nilai_transaksi_miliar}M</span>
                 </div>
-                <div class="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-canvas border border-stroke text-[10px] font-mono text-sky-400">
-                  <span>Tanggal Call:</span>
-                  <strong class="text-white">${tanggalCall}</strong>
-                  <span class="text-slate-600">•</span>
-                  <span>${jamUpdateWIB}</span>
+                <div class="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-canvas border border-stroke text-[10px] font-mono text-sky-400">
+                    Tanggal Call: <strong class="text-white">${tanggalCall}</strong> • ${jamUpdateWIB}
+                  </span>
+                  <span class="px-2 py-0.5 rounded-md bg-elevated border border-stroke text-[10px] font-mono font-bold ${ev.layak ? 'text-emerald-400' : 'text-slate-300'}">
+                    Skor ${ev.skor}/100 • ${wrText}
+                  </span>
                 </div>
                 <p class="text-xs font-semibold text-slate-300 mt-1.5">${item.status_bandar} <span class="text-slate-600 mx-1">•</span> Dominasi Top 3: <span class="text-emerald-400 font-mono">${item.dominasi_top3}%</span></p>
               </div>
@@ -1474,7 +1950,7 @@
               </div>
             </div>
 
-            <!-- Panduan Exit TP/SL agar pengguna tidak bingung -->
+            <!-- Panduan Exit TP/SL -->
             <div class="bg-canvas/80 border border-stroke rounded-xl px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono">
               <span class="text-slate-400">Panduan Exit (${tanggalCall}):</span>
               <div class="flex flex-wrap items-center gap-2">
