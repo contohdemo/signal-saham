@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#090D16" />
-  <title>ALPHAFLOW IDX — PT Bintang Ari Wibowo</title>
+  <title>ALPHAFLOW IDX — STAR GRUP</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
@@ -32,6 +32,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
   <style>
+    html { scroll-behavior: smooth; }
     body { background-color: #090D16; color: #F1F5F9; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -49,12 +50,12 @@
 
   <!-- SCREEN 0: INITIAL BOOT LOADER -->
   <section id="boot-loader" class="min-h-screen flex flex-col items-center justify-center p-4 gap-4">
-    <div class="h-14 w-14 rounded-2xl bg-emerald-500 text-canvas flex items-center justify-center font-mono font-extrabold text-lg tracking-tight shadow-lg shadow-emerald-500/20 animate-pulse">
-      BAW
+    <div class="h-14 w-14 rounded-2xl bg-emerald-500 text-canvas flex items-center justify-center font-mono font-extrabold text-sm tracking-tighter shadow-lg shadow-emerald-500/20 animate-pulse">
+      STAR
     </div>
     <div class="text-center space-y-1">
       <p class="text-sm font-extrabold text-white tracking-tight">ALPHAFLOW <span class="text-emerald-400">IDX</span></p>
-      <p class="text-xs text-slate-400">Memverifikasi sesi keamanan terminal...</p>
+      <p class="text-xs text-slate-400">STAR GRUP — Memverifikasi sesi keamanan terminal...</p>
     </div>
   </section>
 
@@ -62,12 +63,12 @@
   <section id="auth-gate" class="hidden min-h-screen flex items-center justify-center p-4">
     <div class="bg-surface border border-stroke rounded-2xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl animate-card">
       <div class="flex items-center gap-3.5">
-        <div class="h-12 w-12 rounded-2xl bg-emerald-500 text-canvas flex items-center justify-center font-mono font-extrabold text-base tracking-tight shadow-md shadow-emerald-500/20">
-          BAW
+        <div class="h-12 w-12 rounded-2xl bg-emerald-500 text-canvas flex items-center justify-center font-mono font-extrabold text-xs tracking-tighter shadow-md shadow-emerald-500/20">
+          STAR
         </div>
         <div>
           <h1 class="text-lg font-extrabold text-white tracking-tight">ALPHAFLOW <span class="text-emerald-400">IDX</span></h1>
-          <p class="text-xs text-slate-400 font-medium">PT Bintang Ari Wibowo</p>
+          <p class="text-xs text-slate-400 font-semibold">STAR GRUP</p>
         </div>
       </div>
 
@@ -75,7 +76,7 @@
         <div class="bg-canvas border border-stroke rounded-xl p-4 space-y-1.5">
           <p class="text-xs font-bold text-white">Akses Sistem Terbatas (Private Terminal)</p>
           <p class="text-xs text-slate-400 leading-relaxed">
-            Terminal intelijen aliran dana institusional, radar scalping intraday, pemantauan risiko makro global, dan eksekusi BPJS BEI memerlukan verifikasi akun Google atas perizinan administrator.
+            Terminal intelijen aliran dana institusional, radar scalping intraday, riwayat sinyal TP/SL, dan pemantauan risiko makro global memerlukan verifikasi akun Google atas perizinan administrator STAR GRUP.
           </p>
         </div>
 
@@ -98,7 +99,7 @@
             <span class="text-xs font-bold text-amber-400">Menunggu Perizinan Administrator</span>
           </div>
           <p class="text-xs text-slate-300 leading-relaxed">
-            Akun <strong id="pending-user-email" class="text-white font-mono"></strong> telah terdaftar dalam antrean akses. Halaman ini akan terbuka otomatis segera setelah administrator menyetujui permintaan Anda.
+            Akun <strong id="pending-user-email" class="text-white font-mono"></strong> telah terdaftar dalam antrean akses STAR GRUP. Halaman ini akan terbuka otomatis segera setelah administrator menyetujui permintaan Anda.
           </p>
         </div>
         <button onclick="logoutGoogle()" class="w-full bg-elevated hover:bg-stroke border border-stroke text-slate-300 text-xs font-bold py-2.5 rounded-xl transition">
@@ -107,7 +108,7 @@
       </div>
 
       <p class="text-[11px] text-center text-slate-500">
-        © 2026 PT Bintang Ari Wibowo. Hak akses dilindungi sistem.
+        © 2026 STAR GRUP. Hak akses dilindungi sistem.
       </p>
     </div>
   </section>
@@ -119,8 +120,8 @@
     <header class="sticky top-0 z-40 bg-canvas/95 backdrop-blur-md border-b border-stroke">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
         <div class="flex items-center gap-3">
-          <div class="h-10 w-10 rounded-xl bg-emerald-500 text-canvas flex items-center justify-center font-mono font-extrabold text-sm tracking-tight shadow-md shadow-emerald-500/20">
-            BAW
+          <div class="h-10 w-10 rounded-xl bg-emerald-500 text-canvas flex items-center justify-center font-mono font-extrabold text-xs tracking-tighter shadow-md shadow-emerald-500/20">
+            STAR
           </div>
           <div>
             <div class="flex items-center gap-2 flex-wrap">
@@ -130,12 +131,15 @@
               </span>
             </div>
             <p class="text-[11px] text-slate-400 font-medium mt-0.5">
-              PT Bintang Ari Wibowo <span class="text-slate-600 mx-1">•</span> <span id="clock-wib" class="font-mono text-slate-300">--:-- WIB</span>
+              STAR GRUP <span class="text-slate-600 mx-1">•</span> <span id="clock-wib" class="font-mono text-slate-300">--:-- WIB</span>
             </p>
           </div>
         </div>
 
         <div class="flex items-center gap-2">
+          <a href="#disclaimer-box" class="hidden sm:inline-flex items-center bg-surface hover:bg-elevated border border-amber-500/30 text-amber-300 text-xs font-bold px-3 py-2 rounded-xl transition">
+            Disclaimer
+          </a>
           <button onclick="salinSemuaValid()" class="bg-emerald-500 hover:bg-emerald-400 text-canvas text-xs font-extrabold px-3.5 py-2 rounded-xl shadow-sm transition active:scale-95">
             Salin Plan
           </button>
@@ -158,11 +162,11 @@
           <span id="scalp-nav-dot" class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
           Radar Scalping <span id="badge-scalp" class="ml-0.5 px-1.5 py-0.2 rounded bg-elevated text-[10px] font-mono text-emerald-400 border border-stroke">LIVE</span>
         </button>
+        <button onclick="gantiMenu('history')" id="nav-history" class="nav-tab border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-3.5 py-2.5 whitespace-nowrap">
+          Riwayat Sinyal (TP/SL) <span id="badge-history" class="ml-1 px-1.5 py-0.2 rounded bg-elevated text-[10px] font-mono text-slate-300 border border-stroke">0</span>
+        </button>
         <button onclick="gantiMenu('berita')" id="nav-berita" class="nav-tab border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-3.5 py-2.5 whitespace-nowrap">
           Berita & Makro Global <span id="badge-risk" class="ml-1 px-1.5 py-0.2 rounded bg-elevated text-[10px] font-mono text-slate-300 border border-stroke">-</span>
-        </button>
-        <button onclick="gantiMenu('jurnal')" id="nav-jurnal" class="nav-tab border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-3.5 py-2.5 whitespace-nowrap">
-          Jurnal & Portofolio <span id="badge-aktif" class="ml-1 px-1.5 py-0.2 rounded bg-elevated text-[10px] font-mono text-slate-300 border border-stroke">0</span>
         </button>
         <button onclick="gantiMenu('funnel')" id="nav-funnel" class="nav-tab border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-3.5 py-2.5 whitespace-nowrap">
           Transparansi Screening (15→5)
@@ -178,8 +182,8 @@
       <!-- MACRO RISK GUARD BANNER -->
       <section id="macro-guard-banner" class="hidden rounded-2xl p-4 sm:p-5 border space-y-2 shadow-lg animate-card"></section>
 
-      <!-- Executive KPI Overview (Public-Safe Metrics Only) -->
-      <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <!-- Executive KPI Overview (Clean 3-Column Layout) -->
+      <section class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <div class="bg-surface border border-stroke rounded-2xl p-4 shadow-sm">
           <span class="text-[11px] font-medium text-slate-400 block">Status Sinyal</span>
           <div class="flex items-baseline justify-between mt-1.5">
@@ -195,16 +199,10 @@
           </div>
         </div>
         <div class="bg-surface border border-stroke rounded-2xl p-4 shadow-sm">
-          <span class="text-[11px] font-medium text-slate-400 block">Acuan Data EOD</span>
+          <span class="text-[11px] font-medium text-slate-400 block">Tanggal Call / Acuan EOD</span>
           <div class="flex items-baseline justify-between mt-1.5">
             <span id="label-eod" class="text-base sm:text-lg font-mono font-bold text-sky-400">-</span>
             <span class="text-[10px] font-mono text-slate-500">08:00 WIB</span>
-          </div>
-        </div>
-        <div class="bg-surface border border-stroke rounded-2xl p-4 shadow-sm">
-          <span class="text-[11px] font-medium text-slate-400 block">Net P&L Jurnal</span>
-          <div class="flex items-baseline justify-between mt-1.5">
-            <span id="stat-pnl" class="text-base sm:text-lg font-mono font-bold text-slate-200">Rp 0</span>
           </div>
         </div>
       </section>
@@ -212,28 +210,14 @@
       <!-- VIEW 1: SINYAL EKSEKUSI -->
       <div id="view-sinyal" class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
 
-        <!-- Sidebar Controls -->
+        <!-- Sidebar Controls (Clean without Modal Allocation) -->
         <aside class="lg:col-span-4 lg:order-2 lg:sticky lg:top-32 space-y-4">
           <div class="bg-surface border border-stroke rounded-2xl p-4 space-y-3.5 shadow-sm">
             <div>
-              <span class="text-xs font-extrabold text-white block">Alokasi Modal per Emiten (IDR)</span>
+              <span class="text-xs font-extrabold text-white block">Filter & Panduan Exit BPJS</span>
               <span class="text-[11px] text-slate-400 leading-relaxed block mt-0.5">
-                Kalkulasi Lot otomatis, Target TP (+3%), dan Cut Loss (-2%) bersih setelah fee (<span id="label-fee-total">0.40</span>%)
+                Periksa <strong class="text-white">Tanggal Call</strong> di setiap kartu sebelum masuk, lalu disiplin exit saat menyentuh <strong class="text-emerald-400">Target TP</strong> atau <strong class="text-rose-400">Cut Loss (SL)</strong>.
               </span>
-            </div>
-
-            <div class="relative">
-              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-400">Rp</span>
-              <input id="input-modal" type="number" value="5000000" step="500000" min="100000" oninput="onModalInputChange(this.value)"
-                class="w-full bg-canvas border border-stroke focus:border-emerald-500 rounded-xl pl-9 pr-3 py-2 text-sm font-mono font-bold text-emerald-400 outline-none" />
-            </div>
-
-            <!-- Quick Preset Chips -->
-            <div class="grid grid-cols-4 gap-1.5">
-              <button type="button" onclick="setPresetModal(2000000)" class="bg-canvas hover:bg-elevated border border-stroke text-[11px] font-mono text-slate-300 py-1.5 rounded-lg transition">2 Jt</button>
-              <button type="button" onclick="setPresetModal(5000000)" class="bg-canvas hover:bg-elevated border border-stroke text-[11px] font-mono text-slate-300 py-1.5 rounded-lg transition">5 Jt</button>
-              <button type="button" onclick="setPresetModal(10000000)" class="bg-canvas hover:bg-elevated border border-stroke text-[11px] font-mono text-slate-300 py-1.5 rounded-lg transition">10 Jt</button>
-              <button type="button" onclick="setPresetModal(25000000)" class="bg-canvas hover:bg-elevated border border-stroke text-[11px] font-mono text-slate-300 py-1.5 rounded-lg transition">25 Jt</button>
             </div>
 
             <div class="pt-1 border-t border-stroke/80">
@@ -244,6 +228,13 @@
                 <option value="WATCHLIST">Watchlist</option>
                 <option value="AVOID">Avoid</option>
               </select>
+            </div>
+
+            <div class="bg-canvas border border-stroke rounded-xl p-3 space-y-1.5 text-[11px]">
+              <span class="font-bold text-sky-400 block">Aturan Eksekusi Harian (BPJS):</span>
+              <p class="text-slate-300 leading-relaxed">• Beli di sesi pagi (09:00 WIB) hanya jika harga Open ≤ <strong class="text-amber-400">Max Beli</strong>.</p>
+              <p class="text-slate-300 leading-relaxed">• Jika menyentuh <strong class="text-emerald-400">TP (+3%)</strong> atau <strong class="text-rose-400">SL (-2%)</strong>, segera tutup posisi agar tidak bingung saat penutupan.</p>
+              <p class="text-slate-300 leading-relaxed">• Cek tab <button type="button" onclick="gantiMenu('history')" class="text-emerald-400 font-bold underline">Riwayat Sinyal</button> untuk melihat arsip call sebelumnya.</p>
             </div>
           </div>
 
@@ -302,18 +293,12 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-stroke/80">
-            <div>
-              <label class="text-[10px] font-mono uppercase text-slate-400 block mb-1">Alokasi Modal Scalping (IDR)</label>
-              <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-400">Rp</span>
-                <input id="input-modal-scalp" type="number" value="5000000" step="500000" min="100000" oninput="onModalInputChange(this.value)"
-                  class="w-full bg-canvas border border-stroke focus:border-emerald-500 rounded-xl pl-8 pr-3 py-1.5 text-xs font-mono font-bold text-emerald-400 outline-none" />
-              </div>
-            </div>
-            <div>
-              <label class="text-[10px] font-mono uppercase text-slate-400 block mb-1">Filter Momentum Intraday</label>
-              <select id="filter-scalp-status" onchange="renderScalping()" class="w-full bg-canvas border border-stroke rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-200 outline-none">
+          <div class="pt-3 border-t border-stroke/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <p class="text-[11px] text-slate-300">
+              Setiap kartu menampilkan <strong class="text-white">Tanggal & Jam Call</strong> beserta target <strong class="text-emerald-400">TP1 / TP2</strong> dan <strong class="text-rose-400">Cut Loss (SL)</strong>.
+            </p>
+            <div class="sm:w-72 shrink-0">
+              <select id="filter-scalp-status" onchange="renderScalping()" class="w-full bg-canvas border border-stroke rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 outline-none">
                 <option value="ALL">Semua Radar Intraday</option>
                 <option value="HOT BREAKOUT">Hot Breakout (Vol ≥ 2x & Above VWAP)</option>
                 <option value="SCALP READY">Scalp Ready</option>
@@ -324,6 +309,42 @@
         </div>
 
         <div id="container-scalping" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </div>
+
+      <!-- VIEW 1C: RIWAYAT SINYAL & HASIL TP/SL (HISTORY) -->
+      <div id="view-history" class="hidden space-y-4">
+        <div class="bg-surface border border-stroke rounded-2xl p-4 sm:p-5 space-y-4 shadow-sm">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 class="text-sm sm:text-base font-extrabold text-white">Riwayat Call Signal & Evaluasi TP / SL</h2>
+              <p class="text-xs text-slate-400 mt-0.5">Arsip tanggal call sinyal sebelumnya beserta status pencapaian Target Profit (TP) atau Cut Loss (SL) agar mudah dicocokkan saat exit.</p>
+            </div>
+            <div class="flex gap-2.5 text-xs font-mono bg-canvas px-3.5 py-2.5 rounded-xl border border-stroke shrink-0">
+              <div><span class="text-slate-500 block text-[10px]">Total Call</span><strong id="hist-total" class="text-white">0</strong></div>
+              <div class="border-l border-stroke pl-3"><span class="text-slate-500 block text-[10px]">Kena TP</span><strong id="hist-tp" class="text-emerald-400">0</strong></div>
+              <div class="border-l border-stroke pl-3"><span class="text-slate-500 block text-[10px]">Kena SL</span><strong id="hist-sl" class="text-rose-400">0</strong></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-stroke/80">
+            <div>
+              <label class="text-[10px] font-mono uppercase text-slate-400 block mb-1">Cari Emiten / Tanggal Call</label>
+              <input id="search-history" type="text" placeholder="Contoh: BBCA atau 2026-11-27..." oninput="renderHistory()"
+                class="w-full bg-canvas border border-stroke focus:border-emerald-500 rounded-xl px-3 py-2 text-xs font-mono text-white outline-none" />
+            </div>
+            <div>
+              <label class="text-[10px] font-mono uppercase text-slate-400 block mb-1">Filter Status Exit (TP / SL)</label>
+              <select id="filter-history-status" onchange="renderHistory()" class="w-full bg-canvas border border-stroke rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 outline-none">
+                <option value="ALL">Semua Riwayat Call</option>
+                <option value="TP">Kena TP (Profit)</option>
+                <option value="SL">Kena SL (Cut Loss)</option>
+                <option value="ACTIVE">Call Aktif / Menunggu EOD</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div id="container-history" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
       </div>
 
       <!-- VIEW 2: BERITA VALID & MAKRO GLOBAL -->
@@ -341,22 +362,6 @@
         </div>
 
         <div id="container-berita" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
-      </div>
-
-      <!-- VIEW 3: JURNAL & POSISI AKTIF -->
-      <div id="view-jurnal" class="hidden space-y-4">
-        <div class="bg-surface border border-stroke rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
-          <div>
-            <h2 class="text-sm sm:text-base font-bold text-white">Jurnal Eksekusi & Portofolio Harian</h2>
-            <p class="text-xs text-slate-400">Rekam posisi beli BPJS maupun Scalping dan pantau realisasi profit bersih secara real-time.</p>
-          </div>
-          <div class="flex gap-4 text-xs font-mono bg-canvas px-4 py-2.5 rounded-xl border border-stroke">
-            <div><span class="text-slate-500 block text-[10px]">Win Rate</span><strong id="jurnal-winrate" class="text-emerald-400">0%</strong></div>
-            <div class="border-l border-stroke pl-4"><span class="text-slate-500 block text-[10px]">Total Posisi</span><strong id="jurnal-count" class="text-white">0</strong></div>
-          </div>
-        </div>
-
-        <div id="container-jurnal" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
       </div>
 
       <!-- VIEW 4: TRANSPARANSI SCREENING -->
@@ -393,13 +398,28 @@
         </div>
       </div>
 
+      <!-- DISCLAIMER SECTION (ALWAYS VISIBLE) -->
+      <section id="disclaimer-box" class="bg-surface border border-amber-500/40 rounded-2xl p-4 sm:p-5 space-y-2.5 shadow-md">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/40 text-[10px] font-mono font-extrabold uppercase tracking-wider">
+              DISCLAIMER • STAR GRUP
+            </span>
+            <span class="text-xs font-extrabold text-emerald-400">“Kita Akan Kaya Bersama” — Purbaya</span>
+          </div>
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Platform <strong class="text-white">ALPHAFLOW IDX</strong> oleh <strong class="text-white">STAR GRUP</strong> dibangun dengan semangat kata-kata Purbaya: <strong class="text-emerald-400">“Kita akan kaya bersama.”</strong> Seluruh sinyal, area beli, target TP, maupun batas Cut Loss (SL) disajikan sebagai referensi analisis data dan alat bantu pengambilan keputusan. Perdagangan saham memiliki risiko fluktuasi harga—<strong class="text-emerald-300">jika mencapai Target Profit (TP) mari kita bersyukur bersama, dan jika menyentuh Cut Loss (SL) tetap disiplin menjaga risiko serta jangan menghina atau menyalahkan kami.</strong> Segala keputusan eksekusi dan risiko transaksi sepenuhnya menjadi tanggung jawab masing-masing pengguna.
+        </p>
+      </section>
+
     </main>
 
     <!-- Corporate Footer -->
     <footer class="border-t border-stroke bg-surface/60 mt-auto">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
         <div>
-          <p class="text-xs font-bold text-white">PT Bintang Ari Wibowo</p>
+          <p class="text-xs font-bold text-white">STAR GRUP</p>
           <p class="text-[11px] text-slate-400">ALPHAFLOW IDX — Institutional Equity, Intraday Radar & Macro Risk Intelligence</p>
         </div>
         <div class="flex items-center gap-3 text-[11px] text-slate-400">
@@ -416,15 +436,17 @@
       <div class="flex justify-between items-center border-b border-stroke pb-3">
         <div>
           <h3 class="text-sm font-extrabold text-white">Pengaturan Terminal</h3>
-          <p class="text-[11px] text-slate-400">PT Bintang Ari Wibowo</p>
+          <p class="text-[11px] text-slate-400">STAR GRUP</p>
         </div>
         <button onclick="tutupModalSettings()" class="text-slate-400 hover:text-white text-sm font-bold px-2">✕</button>
       </div>
 
       <div class="space-y-3.5 text-xs">
-        <div>
-          <label class="text-slate-300 font-medium block mb-1">Total Fee Beli + Jual Sekuritas (%)</label>
-          <input id="input-fee" type="number" step="0.05" value="0.40" class="w-full bg-canvas border border-stroke focus:border-emerald-500 rounded-xl px-3 py-2 font-mono text-white outline-none" />
+        <div class="bg-canvas border border-stroke rounded-xl p-3.5 space-y-1.5">
+          <span class="text-[11px] font-bold text-amber-300 block">Filosofi & Disclaimer STAR GRUP</span>
+          <p class="text-[11px] text-slate-300 leading-relaxed">
+            Dibuat dalam semangat kata-kata Purbaya: <strong class="text-emerald-400">“Kita akan kaya bersama.”</strong> Jika mencapai TP mari bersyukur, jika menyentuh SL disiplin jaga risiko dan jangan menghina kami.
+          </p>
         </div>
 
         <!-- ADMIN ONLY WRAPPER: Strictly hidden from regular users -->
@@ -455,40 +477,7 @@
       </div>
 
       <div class="flex justify-end gap-2 pt-2 border-t border-stroke">
-        <button onclick="tutupModalSettings()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white">Tutup</button>
-        <button onclick="simpanPengaturan()" class="bg-emerald-500 hover:bg-emerald-400 text-canvas px-4 py-2 rounded-xl text-xs font-extrabold">Simpan</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Catat Trade ke Jurnal -->
-  <div id="modal-trade" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-surface border border-stroke rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
-      <div class="flex justify-between items-center border-b border-stroke pb-3">
-        <h3 class="text-sm font-extrabold text-white">Catat Entry Posisi — <span id="modal-ticker" class="text-emerald-400 font-mono"></span></h3>
-        <button onclick="tutupModalTrade()" class="text-slate-400 hover:text-white text-sm font-bold px-2">✕</button>
-      </div>
-      <div class="grid grid-cols-2 gap-3 text-xs">
-        <div>
-          <label class="text-slate-400 block mb-1">Harga Beli</label>
-          <input id="trade-entry" type="number" class="w-full bg-canvas border border-stroke rounded-xl px-3 py-2 font-mono text-white font-bold" />
-        </div>
-        <div>
-          <label class="text-slate-400 block mb-1">Jumlah Lot</label>
-          <input id="trade-lot" type="number" class="w-full bg-canvas border border-stroke rounded-xl px-3 py-2 font-mono text-sky-400 font-bold" />
-        </div>
-        <div>
-          <label class="text-slate-400 block mb-1">Target TP</label>
-          <input id="trade-tp" type="number" class="w-full bg-canvas border border-stroke rounded-xl px-3 py-2 font-mono text-emerald-400" />
-        </div>
-        <div>
-          <label class="text-slate-400 block mb-1">Batas Cut Loss</label>
-          <input id="trade-cl" type="number" class="w-full bg-canvas border border-stroke rounded-xl px-3 py-2 font-mono text-rose-400" />
-        </div>
-      </div>
-      <div class="flex justify-end gap-2 pt-2 border-t border-stroke">
-        <button onclick="tutupModalTrade()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white">Batal</button>
-        <button onclick="simpanTradeBaru()" class="bg-emerald-500 hover:bg-emerald-400 text-canvas px-4 py-2 rounded-xl text-xs font-extrabold">Simpan Posisi</button>
+        <button onclick="tutupModalSettings()" class="bg-emerald-500 hover:bg-emerald-400 text-canvas px-4 py-2 rounded-xl text-xs font-extrabold">Tutup</button>
       </div>
     </div>
   </div>
@@ -539,7 +528,7 @@
       last_news_sync: "-"
     };
 
-    let journalList = [];
+    let historyRawData = null;
 
     function showToast(pesan, tipe = "info") {
       const box = document.getElementById("toast-box");
@@ -559,32 +548,20 @@
       return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
     }
 
-    function getTanggalHariIniWIB() {
-      const wib = getWIBDate();
-      return `${wib.getFullYear()}-${String(wib.getMonth() + 1).padStart(2, "0")}-${String(wib.getDate()).padStart(2, "0")}`;
+    function formatWaktuWIB(isoStr) {
+      if (!isoStr || isoStr === "-") return "08:00 WIB";
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return String(isoStr);
+      return d.toLocaleTimeString("id-ID", {
+        timeZone: "Asia/Jakarta",
+        hour: "2-digit",
+        minute: "2-digit"
+      }) + " WIB";
     }
 
     function updateClockWIB() {
       const wib = getWIBDate();
       document.getElementById("clock-wib").textContent = `${String(wib.getHours()).padStart(2, "0")}:${String(wib.getMinutes()).padStart(2, "0")} WIB`;
-    }
-
-    function onModalInputChange(val) {
-      const num = Number(val) || 5000000;
-      const elMain = document.getElementById("input-modal");
-      const elScalp = document.getElementById("input-modal-scalp");
-      if (elMain && Number(elMain.value) !== num) elMain.value = num;
-      if (elScalp && Number(elScalp.value) !== num) elScalp.value = num;
-      renderKartu();
-      renderScalping();
-    }
-
-    function setPresetModal(nominal) {
-      document.getElementById("input-modal").value = nominal;
-      const elScalp = document.getElementById("input-modal-scalp");
-      if (elScalp) elScalp.value = nominal;
-      renderKartu();
-      renderScalping();
     }
 
     function initFirebaseApp() {
@@ -597,7 +574,6 @@
         });
       }
 
-      // Tangani hasil login jika browser menggunakan mode redirect
       firebase.auth().getRedirectResult().catch((err) => {
         if (err && err.code) {
           showToast("Login gagal (" + err.code + "). Pastikan domain terdaftar.", "err");
@@ -631,7 +607,7 @@
           try {
             await userRef.update({
               email: user.email,
-              name: user.displayName || "Admin BAW",
+              name: user.displayName || "Admin STAR GRUP",
               status: "approved",
               role: "admin",
               last_login: Date.now()
@@ -641,7 +617,6 @@
           return;
         }
 
-        // Daftarkan pengguna baru (hanya jika belum ada node agar tidak bentrok rule !data.exists())
         try {
           const snap = await userRef.once("value");
           if (!snap.exists()) {
@@ -658,7 +633,6 @@
           console.warn("Info sinkronisasi user:", dbErr.message);
         }
 
-        // Pantau status approval secara real-time
         activeUserRef = userRef;
         userRef.on("value", (s) => {
           const uData = s.val() || {};
@@ -733,6 +707,7 @@
         if (data) {
           appState = data;
           perbaruiTampilanSinyal();
+          renderHistory();
         }
       });
 
@@ -745,26 +720,19 @@
         renderScalping();
       });
 
-      // 3. Berita Valid & Makro Global
+      // 3. Riwayat Sinyal (History TP/SL)
+      db.ref("bpjs_history").on("value", (snap) => {
+        historyRawData = snap.val();
+        renderHistory();
+      });
+
+      // 4. Berita Valid & Makro Global
       db.ref("bpjs_news").on("value", (snap) => {
         const data = snap.val();
         if (data) {
           newsState = data;
           perbaruiTampilanBeritaDanMakro();
         }
-      });
-
-      // 4. Jurnal Eksekusi
-      db.ref("bpjs_journal").on("value", (snap) => {
-        const rawObj = snap.val();
-        if (!rawObj) {
-          journalList = [];
-        } else {
-          journalList = Object.entries(rawObj)
-            .map(([id, val]) => ({ id, ...val }))
-            .sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
-        }
-        renderJurnal();
       });
 
       // 5. ADMIN ONLY: Metadata Kuota API & Whitelist Pengguna
@@ -994,9 +962,12 @@
           : "h-2.5 w-2.5 rounded-full bg-amber-400";
       }
 
+      const callDate = scalpState.tanggal && scalpState.tanggal !== "-" ? scalpState.tanggal : "-";
+      const callTime = scalpState.updated_wib && scalpState.updated_wib !== "-" ? scalpState.updated_wib : "-";
+
       if (updatedEl) {
-        updatedEl.textContent = scalpState.updated_wib && scalpState.updated_wib !== "-"
-          ? `Update terakhir: ${scalpState.updated_wib} (${scalpState.tanggal || "-"})`
+        updatedEl.textContent = callTime !== "-"
+          ? `Call Signal: ${callDate} • ${callTime}`
           : "Menunggu pemindaian sesi aktif...";
       }
 
@@ -1014,9 +985,6 @@
         return;
       }
 
-      const modalPerEmiten = Number(document.getElementById("input-modal").value) || 5000000;
-      const feeRate = (Number(document.getElementById("input-fee").value) || 0.40) / 100;
-
       container.innerHTML = list.map(s => {
         const isHot = s.status_scalp === "HOT BREAKOUT";
         const isReady = s.status_scalp === "SCALP READY";
@@ -1027,14 +995,8 @@
           : "bg-amber-500/15 text-amber-400 border-amber-500/40";
 
         const harga = s.harga_sekarang || 1;
-        const hargaPerLot = harga * 100;
-        const maksLot = Math.max(1, Math.floor(modalPerEmiten / hargaPerLot));
-        const modalTerpakai = maksLot * hargaPerLot;
-        const estFee = modalTerpakai * feeRate;
-
-        const estNetTp1 = Math.max(0, (maksLot * 100 * ((s.target_tp1 || harga) - harga)) - estFee);
-        const estNetTp2 = Math.max(0, (maksLot * 100 * ((s.target_tp2 || harga) - harga)) - estFee);
-        const estNetLoss = (maksLot * 100 * (harga - (s.cut_loss || harga))) + estFee;
+        const itemCallDate = s.tanggal_call || callDate;
+        const itemCallTime = s.jam_call || callTime;
 
         return `
           <article class="bg-surface border ${isHot ? 'border-emerald-500/40' : 'border-stroke'} rounded-2xl p-4 sm:p-5 space-y-4 shadow-md animate-card">
@@ -1044,6 +1006,12 @@
                   <h3 class="text-2xl font-extrabold font-mono text-white tracking-tight">${s.ticker}</h3>
                   <span class="text-xs font-mono font-bold text-emerald-400 bg-elevated border border-stroke px-2 py-0.5 rounded-lg">${s.persen_harian >= 0 ? '+' : ''}${s.persen_harian}%</span>
                   <span class="text-[11px] font-mono text-slate-400">Val Rp ${s.nilai_transaksi_miliar}M</span>
+                </div>
+                <div class="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-canvas border border-stroke text-[10px] font-mono text-sky-400">
+                  <span>Call Signal:</span>
+                  <strong class="text-white">${itemCallDate}</strong>
+                  <span class="text-slate-600">•</span>
+                  <span>${itemCallTime}</span>
                 </div>
                 <p class="text-[11px] font-mono text-slate-300 mt-1.5">
                   5m: <span class="text-emerald-400 font-bold">+${s.lonjakan_5m}%</span>
@@ -1060,24 +1028,24 @@
 
             <div class="grid grid-cols-2 gap-2.5 text-xs">
               <div class="bg-canvas border border-stroke rounded-xl p-3">
-                <span class="text-[10px] text-slate-400 block">Harga / Max Beli</span>
+                <span class="text-[10px] text-slate-400 block">Harga Call / Max Beli</span>
                 <span class="font-mono font-bold text-white text-sm block mt-0.5">${formatIdr(harga)}</span>
-                <span class="font-mono text-[10px] text-amber-400">Max ${formatIdr(s.area_beli_max)} (${maksLot} Lot)</span>
+                <span class="font-mono text-[10px] text-amber-400">Max Beli ${formatIdr(s.area_beli_max)}</span>
               </div>
               <div class="bg-canvas border border-stroke rounded-xl p-3">
                 <span class="text-[10px] text-slate-400 block">Target TP1 (+1.5%)</span>
                 <span class="font-mono font-bold text-emerald-400 text-sm block mt-0.5">${formatIdr(s.target_tp1)}</span>
-                <span class="font-mono text-[10px] text-emerald-500/90">Net +${formatIdr(estNetTp1)}</span>
+                <span class="font-mono text-[10px] text-emerald-500/90">Exit Profit Tahap 1</span>
               </div>
               <div class="bg-canvas border border-stroke rounded-xl p-3">
                 <span class="text-[10px] text-slate-400 block">Target TP2 (+2.5%)</span>
                 <span class="font-mono font-bold text-sky-400 text-sm block mt-0.5">${formatIdr(s.target_tp2)}</span>
-                <span class="font-mono text-[10px] text-sky-400/90">Net +${formatIdr(estNetTp2)}</span>
+                <span class="font-mono text-[10px] text-sky-400/90">Exit Profit Tahap 2</span>
               </div>
               <div class="bg-canvas border border-stroke rounded-xl p-3">
-                <span class="text-[10px] text-slate-400 block">Cut Loss (-1.5%)</span>
+                <span class="text-[10px] text-slate-400 block">Cut Loss / SL (-1.5%)</span>
                 <span class="font-mono font-bold text-rose-400 text-sm block mt-0.5">${formatIdr(s.cut_loss)}</span>
-                <span class="font-mono text-[10px] text-rose-500/90">Net -${formatIdr(estNetLoss)}</span>
+                <span class="font-mono text-[10px] text-rose-500/90">Wajib SL jika tembus</span>
               </div>
             </div>
 
@@ -1087,14 +1055,9 @@
             </div>
 
             <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-stroke text-xs">
-              <div class="flex items-center gap-2">
-                <button onclick="bukaModalTrade('${s.ticker}', ${harga}, ${s.target_tp1}, ${s.cut_loss})" class="bg-emerald-500 hover:bg-emerald-400 text-canvas font-bold px-3.5 py-1.5 rounded-xl transition">
-                  + Catat Entry
-                </button>
-                <button onclick="salinSinyalScalping('${s.ticker}')" class="bg-elevated hover:bg-stroke border border-stroke text-slate-200 font-semibold px-3 py-1.5 rounded-xl transition">
-                  Salin Sinyal
-                </button>
-              </div>
+              <button onclick="salinSinyalScalping('${s.ticker}')" class="bg-elevated hover:bg-stroke border border-stroke text-slate-200 font-semibold px-3.5 py-1.5 rounded-xl transition">
+                Salin Sinyal
+              </button>
               <div class="flex items-center gap-2.5 font-mono text-[11px]">
                 <a href="https://www.tradingview.com/chart/?symbol=IDX:${s.ticker}" target="_blank" rel="noopener" class="text-sky-400 hover:underline">TradingView ↗</a>
                 <span class="text-slate-700">|</span>
@@ -1109,20 +1072,205 @@
       const s = (scalpState.daftar_scalping || []).find(x => x.ticker === ticker);
       if (!s) return;
       const teks = [
-        `RADAR SCALPING LIVE — PT Bintang Ari Wibowo`,
+        `RADAR SCALPING LIVE — STAR GRUP`,
+        `Tanggal Call: ${s.tanggal_call || scalpState.tanggal || '-'} (${s.jam_call || scalpState.updated_wib || '-'})`,
         `Emiten: ${s.ticker} [${s.status_scalp}]`,
-        `Harga: ${formatIdr(s.harga_sekarang)} (${s.persen_harian >= 0 ? '+' : ''}${s.persen_harian}% | 5m: +${s.lonjakan_5m}% | Vol: ${s.lonjakan_volume}x)`,
+        `Harga Call: ${formatIdr(s.harga_sekarang)} (${s.persen_harian >= 0 ? '+' : ''}${s.persen_harian}% | 5m: +${s.lonjakan_5m}% | Vol: ${s.lonjakan_volume}x)`,
         `Batas Max Beli: ${formatIdr(s.area_beli_max)}`,
         `TP1 (+1.5%): ${formatIdr(s.target_tp1)} | TP2 (+2.5%): ${formatIdr(s.target_tp2)}`,
-        `Cut Loss (-1.5%): ${formatIdr(s.cut_loss)}`,
+        `Cut Loss / SL (-1.5%): ${formatIdr(s.cut_loss)}`,
         `Catatan: ${s.catatan}`
       ].join("\n");
       navigator.clipboard.writeText(teks);
       showToast(`Sinyal scalping ${ticker} disalin.`, "ok");
     }
 
+    // NORMALISASI & RENDER RIWAYAT SINYAL (HISTORY TP/SL)
+    function normalizeHistoryItems() {
+      const items = [];
+      const seenKeys = new Set();
+
+      const pushNormalized = (raw, fallbackDate = "-", fallbackType = "BPJS") => {
+        if (!raw || !raw.ticker) return;
+        const tanggalCall = raw.tanggal_call || raw.tanggal_bursa || raw.tanggal || fallbackDate || "-";
+        const jamCall = raw.jam_call || (fallbackType === "BPJS" ? "08:00 WIB" : "-");
+        const entry = Number(raw.harga_entry || raw.harga_close || raw.harga_sekarang || raw.entry || 0);
+        const maxBeli = Number(raw.max_beli_pagi || raw.area_beli_max || entry);
+        const tp = Number(raw.target_tp || raw.target_tp1 || raw.tp || 0);
+        const sl = Number(raw.cut_loss || raw.sl || 0);
+        const exitPrice = Number(raw.harga_exit || raw.exit_price || raw.close_aktual || 0);
+        const rawStatus = String(raw.hasil || raw.status_hasil || raw.status_exit || raw.status || "").toUpperCase();
+
+        let statusKategori = "ACTIVE";
+        let statusLabel = "CALL AKTIF / PANTAU TP-SL";
+
+        if (rawStatus.includes("TP") || rawStatus.includes("PROFIT") || rawStatus.includes("WIN") || (exitPrice > 0 && tp > 0 && exitPrice >= tp)) {
+          statusKategori = "TP";
+          statusLabel = rawStatus || "KENA TP (PROFIT)";
+        } else if (rawStatus.includes("SL") || rawStatus.includes("CUT") || rawStatus.includes("LOSS") || (exitPrice > 0 && sl > 0 && exitPrice <= sl)) {
+          statusKategori = "SL";
+          statusLabel = rawStatus || "KENA SL (CUT LOSS)";
+        } else if (rawStatus.includes("EXIT") || rawStatus.includes("SELESAI") || rawStatus.includes("CLOSE") || rawStatus.includes("EXPIRED")) {
+          statusKategori = "TP";
+          statusLabel = rawStatus;
+        }
+
+        const key = `${tanggalCall}_${raw.ticker}_${fallbackType}`;
+        if (seenKeys.has(key)) return;
+        seenKeys.add(key);
+
+        items.push({
+          ticker: raw.ticker,
+          strategi: raw.strategi || fallbackType,
+          sinyal: raw.sinyal || raw.status_scalp || "CALL",
+          tanggal_call: tanggalCall,
+          jam_call: jamCall,
+          entry,
+          max_beli: maxBeli,
+          tp,
+          sl,
+          exit_price: exitPrice,
+          status_kategori: statusKategori,
+          status_label: statusLabel,
+          alasan: raw.alasan || raw.catatan || "-"
+        });
+      };
+
+      if (historyRawData) {
+        if (Array.isArray(historyRawData)) {
+          historyRawData.forEach(entry => {
+            if (Array.isArray(entry?.daftar_sinyal)) {
+              entry.daftar_sinyal.forEach(s => pushNormalized(s, entry.tanggal_bursa || entry.tanggal, "BPJS"));
+            } else {
+              pushNormalized(entry, entry?.tanggal_bursa || entry?.tanggal, entry?.strategi || "BPJS");
+            }
+          });
+        } else if (typeof historyRawData === "object") {
+          Object.entries(historyRawData).forEach(([k, val]) => {
+            if (val && Array.isArray(val.daftar_sinyal)) {
+              val.daftar_sinyal.forEach(s => pushNormalized(s, val.tanggal_bursa || val.tanggal || k, "BPJS"));
+            } else if (val && Array.isArray(val.daftar_scalping)) {
+              val.daftar_scalping.forEach(s => pushNormalized(s, val.tanggal || k, "SCALPING"));
+            } else if (val && typeof val === "object") {
+              pushNormalized(val, val.tanggal_bursa || val.tanggal || k, val.strategi || "BPJS");
+            }
+          });
+        }
+      }
+
+      // Sertakan juga sinyal aktif hari ini agar log tanggal call terbaru langsung terlihat di History
+      if (Array.isArray(appState.daftar_sinyal) && appState.daftar_sinyal.length > 0) {
+        const jamBpjs = formatWaktuWIB(appState.updated_at);
+        appState.daftar_sinyal.forEach(s => {
+          pushNormalized({ ...s, jam_call: jamBpjs }, appState.tanggal_bursa, "BPJS");
+        });
+      }
+
+      return items.sort((a, b) => String(b.tanggal_call).localeCompare(String(a.tanggal_call)));
+    }
+
+    function renderHistory() {
+      const container = document.getElementById("container-history");
+      if (!container) return;
+
+      const allItems = normalizeHistoryItems();
+      const totalCount = allItems.length;
+      const tpCount = allItems.filter(x => x.status_kategori === "TP").length;
+      const slCount = allItems.filter(x => x.status_kategori === "SL").length;
+
+      const badgeHist = document.getElementById("badge-history");
+      if (badgeHist) badgeHist.textContent = totalCount;
+
+      document.getElementById("hist-total").textContent = totalCount;
+      document.getElementById("hist-tp").textContent = tpCount;
+      document.getElementById("hist-sl").textContent = slCount;
+
+      const query = (document.getElementById("search-history")?.value || "").trim().toUpperCase();
+      const statusFilter = document.getElementById("filter-history-status")?.value || "ALL";
+
+      const filtered = allItems.filter(item => {
+        const matchQuery = !query || item.ticker.toUpperCase().includes(query) || String(item.tanggal_call).toUpperCase().includes(query);
+        const matchStatus = statusFilter === "ALL" || item.status_kategori === statusFilter;
+        return matchQuery && matchStatus;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="md:col-span-2 bg-surface border border-stroke rounded-2xl p-10 text-center space-y-2 shadow-sm">
+            <p class="text-sm font-bold text-slate-200">Belum Ada Riwayat Call Signal</p>
+            <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+              Setiap sinyal harian yang diterbitkan akan tercatat lengkap beserta tanggal call, harga entry, target TP, dan batas SL agar pengguna mudah mengecek status exit.
+            </p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => {
+        const isTp = item.status_kategori === "TP";
+        const isSl = item.status_kategori === "SL";
+        const borderClass = isTp ? "border-emerald-500/40" : isSl ? "border-rose-500/40" : "border-stroke";
+        const badgeClass = isTp
+          ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/40"
+          : isSl
+          ? "bg-rose-500/15 text-rose-400 border-rose-500/40"
+          : "bg-sky-500/15 text-sky-400 border-sky-500/40";
+
+        return `
+          <article class="bg-surface border ${borderClass} rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-sm animate-card">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h3 class="text-xl font-extrabold font-mono text-white">${item.ticker}</h3>
+                  <span class="px-2 py-0.5 rounded bg-elevated border border-stroke text-[10px] font-mono font-bold text-slate-300">${item.strategi}</span>
+                  <span class="px-2 py-0.5 rounded bg-canvas border border-stroke text-[10px] font-mono font-semibold text-amber-300">${item.sinyal}</span>
+                </div>
+                <p class="text-[11px] font-mono text-sky-400 mt-1">
+                  Tanggal Call: <strong class="text-white">${item.tanggal_call}</strong> • ${item.jam_call}
+                </p>
+              </div>
+              <span class="px-2.5 py-1 text-[10px] font-mono font-bold rounded-lg border shrink-0 ${badgeClass}">
+                ${item.status_label}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 text-xs font-mono">
+              <div class="bg-canvas border border-stroke rounded-xl p-2.5">
+                <span class="text-[10px] text-slate-400 block">Acuan Entry</span>
+                <strong class="text-white text-xs block mt-0.5">${formatIdr(item.entry)}</strong>
+                <span class="text-[9px] text-amber-400">Max ${formatIdr(item.max_beli)}</span>
+              </div>
+              <div class="bg-canvas border border-stroke rounded-xl p-2.5">
+                <span class="text-[10px] text-slate-400 block">Target TP</span>
+                <strong class="text-emerald-400 text-xs block mt-0.5">${formatIdr(item.tp)}</strong>
+                <span class="text-[9px] text-emerald-500/90">Batas Profit</span>
+              </div>
+              <div class="bg-canvas border border-stroke rounded-xl p-2.5">
+                <span class="text-[10px] text-slate-400 block">Cut Loss (SL)</span>
+                <strong class="text-rose-400 text-xs block mt-0.5">${formatIdr(item.sl)}</strong>
+                <span class="text-[9px] text-rose-500/90">Batas Risiko</span>
+              </div>
+            </div>
+
+            ${item.exit_price > 0 ? `
+              <div class="bg-canvas border border-stroke rounded-xl px-3 py-2 flex items-center justify-between text-xs font-mono">
+                <span class="text-slate-400">Harga Realisasi / Aktual:</span>
+                <strong class="${isTp ? 'text-emerald-400' : isSl ? 'text-rose-400' : 'text-white'}">${formatIdr(item.exit_price)}</strong>
+              </div>
+            ` : `
+              <div class="bg-canvas border border-stroke rounded-xl px-3 py-2 text-[11px] text-slate-300">
+                Panduan Exit: Ambil profit saat menyentuh <strong class="text-emerald-400 font-mono">${formatIdr(item.tp)}</strong> atau disiplin cut loss jika turun ke <strong class="text-rose-400 font-mono">${formatIdr(item.sl)}</strong>.
+              </div>
+            `}
+
+            <p class="text-xs text-slate-300 leading-relaxed bg-elevated/60 px-3 py-2.5 rounded-xl border border-stroke/70">
+              ${item.alasan}
+            </p>
+          </article>`;
+      }).join("");
+    }
+
     function gantiMenu(tab) {
-      ["sinyal", "scalping", "berita", "jurnal", "funnel"].forEach(t => {
+      ["sinyal", "scalping", "history", "berita", "funnel"].forEach(t => {
         const viewEl = document.getElementById(`view-${t}`);
         if (!viewEl) return;
         if (t === "sinyal") {
@@ -1149,171 +1297,22 @@
       document.getElementById("modal-settings").classList.add("hidden");
     }
 
-    function simpanPengaturan() {
-      const feeVal = document.getElementById("input-fee").value || "0.40";
-      localStorage.setItem("fee_total", feeVal);
-      document.getElementById("label-fee-total").textContent = feeVal;
-      renderKartu();
-      renderScalping();
-      renderJurnal();
-      tutupModalSettings();
-      showToast("Pengaturan berhasil disimpan.", "ok");
-    }
-
-    // JURNAL EKSEKUSI
-    let modalTickerAktif = "";
-
-    function bukaModalTrade(ticker, closePrice, tpPrice, clPrice) {
-      modalTickerAktif = ticker;
-      const modalPerEmiten = Number(document.getElementById("input-modal").value) || 5000000;
-      const openInput = Number(document.getElementById(`open-${ticker}`)?.value);
-      const entry = openInput > 0 ? openInput : closePrice;
-      const lot = Math.max(1, Math.floor(modalPerEmiten / (entry * 100)));
-
-      document.getElementById("modal-ticker").textContent = ticker;
-      document.getElementById("trade-entry").value = entry;
-      document.getElementById("trade-lot").value = lot;
-      document.getElementById("trade-tp").value = tpPrice;
-      document.getElementById("trade-cl").value = clPrice;
-      document.getElementById("modal-trade").classList.remove("hidden");
-    }
-
-    function tutupModalTrade() {
-      document.getElementById("modal-trade").classList.add("hidden");
-    }
-
-    async function simpanTradeBaru() {
-      const entry = Number(document.getElementById("trade-entry").value);
-      const lot = Number(document.getElementById("trade-lot").value);
-      const tp = Number(document.getElementById("trade-tp").value);
-      const cl = Number(document.getElementById("trade-cl").value);
-
-      if (!entry || !lot || lot <= 0) {
-        showToast("Masukkan harga beli dan jumlah lot yang valid.", "err");
-        return;
-      }
-
-      await firebase.database().ref("bpjs_journal").push({
-        ticker: modalTickerAktif,
-        tanggal: getTanggalHariIniWIB(),
-        entry,
-        lot,
-        tp,
-        cl,
-        status: "OPEN",
-        exit_price: 0,
-        net_pnl: 0,
-        created_at: Date.now()
-      });
-
-      tutupModalTrade();
-      gantiMenu("jurnal");
-      showToast(`Posisi ${modalTickerAktif} (${lot} Lot) dicatat.`, "ok");
-    }
-
-    async function tutupPosisiTrade(id, statusTutup, defaultExitPrice) {
-      const inputHarga = prompt(`Masukkan harga realisasi jual (${statusTutup}):`, defaultExitPrice);
-      if (!inputHarga) return;
-      const exitPrice = Number(inputHarga);
-      if (!exitPrice || exitPrice <= 0) return;
-
-      const item = journalList.find(j => j.id === id);
-      if (!item) return;
-
-      const feePersen = (Number(document.getElementById("input-fee").value) || 0.40) / 100;
-      const nilaiBeli = item.entry * item.lot * 100;
-      const nilaiJual = exitPrice * item.lot * 100;
-      const totalFee = (nilaiBeli + nilaiJual) * (feePersen / 2);
-      const netPnl = Math.round(nilaiJual - nilaiBeli - totalFee);
-
-      await firebase.database().ref(`bpjs_journal/${id}`).update({
-        status: statusTutup,
-        exit_price: exitPrice,
-        net_pnl: netPnl
-      });
-
-      showToast(`Posisi ${item.ticker} ditutup (${netPnl >= 0 ? '+' : ''}${formatIdr(netPnl)})`, netPnl >= 0 ? "ok" : "err");
-    }
-
-    async function hapusTrade(id) {
-      await firebase.database().ref(`bpjs_journal/${id}`).remove();
-      showToast("Catatan jurnal dihapus.", "info");
-    }
-
-    function renderJurnal() {
-      const container = document.getElementById("container-jurnal");
-      const openTrades = journalList.filter(j => j.status === "OPEN");
-      const closedTrades = journalList.filter(j => j.status !== "OPEN");
-      const wins = closedTrades.filter(j => (j.net_pnl || 0) > 0).length;
-      const winRate = closedTrades.length > 0 ? Math.round((wins / closedTrades.length) * 100) : 0;
-      const totalNetPnl = closedTrades.reduce((acc, j) => acc + (j.net_pnl || 0), 0);
-
-      document.getElementById("badge-aktif").textContent = openTrades.length;
-      document.getElementById("jurnal-winrate").textContent = `${winRate}%`;
-      document.getElementById("jurnal-count").textContent = journalList.length;
-
-      const statPnl = document.getElementById("stat-pnl");
-      statPnl.textContent = `${totalNetPnl >= 0 ? '+' : ''}${formatIdr(totalNetPnl)}`;
-      statPnl.className = `text-base sm:text-lg font-mono font-bold ${totalNetPnl > 0 ? 'text-emerald-400' : totalNetPnl < 0 ? 'text-rose-400' : 'text-slate-200'}`;
-
-      if (journalList.length === 0) {
-        container.innerHTML = `
-          <div class="md:col-span-2 bg-surface border border-stroke rounded-2xl p-10 text-center space-y-1.5">
-            <p class="text-sm font-bold text-slate-200">Belum ada catatan transaksi</p>
-            <p class="text-xs text-slate-400">Gunakan tombol <strong class="text-emerald-400">+ Catat Entry</strong> pada kartu sinyal BPJS maupun Radar Scalping saat melakukan pembelian.</p>
-          </div>`;
-        return;
-      }
-
-      container.innerHTML = journalList.map(j => {
-        const isOpen = j.status === "OPEN";
-        const pnlColor = (j.net_pnl || 0) >= 0 ? "text-emerald-400" : "text-rose-400";
-        return `
-          <div class="bg-surface border ${isOpen ? 'border-sky-500/40' : 'border-stroke'} rounded-2xl p-4 sm:p-5 space-y-3 shadow-sm animate-card">
-            <div class="flex justify-between items-start">
-              <div>
-                <div class="flex items-center gap-2">
-                  <span class="text-lg font-mono font-extrabold text-white">${j.ticker}</span>
-                  <span class="text-xs font-mono text-sky-400 font-bold">${j.lot} Lot</span>
-                  <span class="text-[11px] font-mono text-slate-500">${j.tanggal}</span>
-                </div>
-                <p class="text-xs font-mono text-slate-300 mt-0.5">
-                  Buy: <strong>${formatIdr(j.entry)}</strong> • TP: <span class="text-emerald-400">${j.tp}</span> • CL: <span class="text-rose-400">${j.cl}</span>
-                </p>
-              </div>
-              <span class="px-2.5 py-1 text-[10px] font-mono font-bold rounded-lg ${isOpen ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30' : 'bg-elevated text-slate-300 border border-stroke'}">
-                ${j.status}
-              </span>
-            </div>
-            ${isOpen ? `
-              <div class="flex flex-wrap gap-2 pt-1">
-                <button onclick="tutupPosisiTrade('${j.id}', 'TP HIT', ${j.tp})" class="flex-1 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-400 text-xs font-bold py-2 rounded-xl transition">Tutup TP (${j.tp})</button>
-                <button onclick="tutupPosisiTrade('${j.id}', 'EXIT 15:50', ${j.entry})" class="flex-1 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-400 text-xs font-bold py-2 rounded-xl transition">Exit Sore</button>
-                <button onclick="tutupPosisiTrade('${j.id}', 'CL HIT', ${j.cl})" class="flex-1 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-400 text-xs font-bold py-2 rounded-xl transition">Cut Loss (${j.cl})</button>
-              </div>
-            ` : `
-              <div class="flex justify-between items-center text-xs font-mono bg-canvas px-3.5 py-2.5 rounded-xl border border-stroke">
-                <span class="text-slate-400">Sell: <strong class="text-white">${formatIdr(j.exit_price)}</strong></span>
-                <span class="font-bold ${pnlColor}">Net P&L: ${j.net_pnl >= 0 ? '+' : ''}${formatIdr(j.net_pnl)}</span>
-                <button onclick="hapusTrade('${j.id}')" class="text-slate-500 hover:text-rose-400 text-[11px]">Hapus</button>
-              </div>
-            `}
-          </div>`;
-      }).join("");
-    }
-
     function salinPlanEmiten(ticker) {
       const item = (appState.daftar_sinyal || []).find(s => s.ticker === ticker);
       if (!item) return;
+      const tanggalCall = item.tanggal_call || appState.tanggal_bursa || "-";
+      const jamCall = formatWaktuWIB(appState.updated_at);
       const teks = [
-        `ALPHAFLOW IDX — PT Bintang Ari Wibowo`,
+        `ALPHAFLOW IDX — STAR GRUP`,
+        `Tanggal Call: ${tanggalCall} (${jamCall})`,
         `Emiten: ${item.ticker} (${item.sinyal})`,
         `Status Akumulasi: ${item.status_bandar} (Dominasi Top 3: ${item.dominasi_top3}%)`,
         `Close / Avg Bandar: ${formatIdr(item.harga_close)} / Rp ${item.buy_avg_bandar}`,
         `Batas Max Beli 09:00: ${formatIdr(item.max_beli_pagi)}`,
         `Target TP (+3%): ${formatIdr(item.target_tp)}`,
-        `Cut Loss (-2%): ${formatIdr(item.cut_loss)}`,
-        `Analisis: ${item.alasan}`
+        `Cut Loss / SL (-2%): ${formatIdr(item.cut_loss)}`,
+        `Analisis: ${item.alasan}`,
+        `Disclaimer: "Kita akan kaya bersama" — Jika TP bersyukur, jika SL disiplin risiko & jangan menghina kami.`
       ].join("\n");
       navigator.clipboard.writeText(teks);
       showToast(`Rencana trading ${ticker} disalin.`, "ok");
@@ -1329,9 +1328,9 @@
         showToast("Belum ada sinyal Valid atau Watchlist untuk disalin.", "err");
         return;
       }
-      const header = `WATCHLIST EKSEKUSI 09:00 WIB — PT Bintang Ari Wibowo (EOD ${appState.tanggal_bursa})\n\n`;
+      const header = `WATCHLIST EKSEKUSI 09:00 WIB — STAR GRUP (Call ${appState.tanggal_bursa})\n\n`;
       const body = validList.map(i =>
-        `${i.ticker} [${i.sinyal}] | Max Beli: ${i.max_beli_pagi} | TP: ${i.target_tp} | CL: ${i.cut_loss} | Dom Top 3: ${i.dominasi_top3}%`
+        `${i.ticker} [${i.sinyal}] | Max Beli: ${i.max_beli_pagi} | TP: ${i.target_tp} | SL: ${i.cut_loss} | Dom Top 3: ${i.dominasi_top3}%`
       ).join("\n");
       navigator.clipboard.writeText(header + body);
       showToast(`${validList.length} sinyal berhasil disalin.`, "ok");
@@ -1344,18 +1343,31 @@
     function cekGapOpen(ticker, closeKemarin, maxBeliPagi) {
       const inputVal = Number(document.getElementById(`open-${ticker}`).value);
       const out = document.getElementById(`hasil-open-${ticker}`);
+      const badge = document.getElementById(`badge-open-${ticker}`);
       if (!inputVal || inputVal <= 0) {
         out.textContent = "Masukkan harga pembukaan 09:00 WIB untuk validasi gap.";
         out.className = "text-[11px] font-mono text-slate-400 mt-1.5";
+        if (badge) {
+          badge.textContent = "CEK OPEN";
+          badge.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-elevated text-slate-300 border border-stroke font-bold";
+        }
         return;
       }
       const gapPersen = (((inputVal - closeKemarin) / closeKemarin) * 100).toFixed(2);
       if (inputVal <= maxBeliPagi) {
         out.textContent = `LAYAK EKSEKUSI — Gap ${gapPersen >= 0 ? '+' : ''}${gapPersen}% masih berada di bawah batas Max Beli (${formatIdr(maxBeliPagi)}).`;
         out.className = "text-[11px] font-mono font-bold text-emerald-400 mt-1.5";
+        if (badge) {
+          badge.textContent = "LAYAK BELI";
+          badge.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/40 font-bold";
+        }
       } else {
         out.textContent = `LEWATI — Harga pembukaan melompat +${gapPersen}% melebihi batas aman.`;
         out.className = "text-[11px] font-mono font-bold text-rose-400 mt-1.5";
+        if (badge) {
+          badge.textContent = "LEWATI GAP";
+          badge.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/40 font-bold";
+        }
       }
     }
 
@@ -1383,9 +1395,6 @@
       }
 
       const filterStatus = document.getElementById("filter-status").value;
-      const modalPerEmiten = Number(document.getElementById("input-modal").value) || 5000000;
-      const feeRate = (Number(document.getElementById("input-fee").value) || 0.40) / 100;
-
       const list = (appState.daftar_sinyal || []).filter(item =>
         filterStatus === "ALL" || item.sinyal === filterStatus
       );
@@ -1394,10 +1403,12 @@
         container.innerHTML = `
           <div class="bg-surface border border-stroke rounded-2xl p-10 text-center space-y-2 shadow-sm">
             <p class="text-sm font-bold text-slate-200">Menunggu Jadwal Pembaruan Otomatis 08:00 WIB</p>
-            <p class="text-xs text-slate-400">Sistem PT Bintang Ari Wibowo memperbarui sinyal secara otomatis setiap pagi sebelum sesi pembukaan BEI.</p>
+            <p class="text-xs text-slate-400">Sistem STAR GRUP memperbarui sinyal secara otomatis setiap pagi sebelum sesi pembukaan BEI.</p>
           </div>`;
         return;
       }
+
+      const jamUpdateWIB = formatWaktuWIB(appState.updated_at);
 
       container.innerHTML = list.map(item => {
         const isValid = item.sinyal === "VALID BPJS";
@@ -1406,12 +1417,7 @@
           : isWatch ? "bg-amber-500/15 text-amber-400 border-amber-500/40"
           : "bg-rose-500/15 text-rose-400 border-rose-500/40";
 
-        const hargaPerLot = (item.harga_close || 1) * 100;
-        const maksLot = Math.floor(modalPerEmiten / hargaPerLot);
-        const modalTerpakai = maksLot * hargaPerLot;
-        const estFee = modalTerpakai * feeRate;
-        const estNetProfit = Math.max(0, (maksLot * 100 * ((item.target_tp || item.harga_close) - item.harga_close)) - estFee);
-        const estNetLoss = (maksLot * 100 * (item.harga_close - (item.cut_loss || item.harga_close))) + estFee;
+        const tanggalCall = item.tanggal_call || appState.tanggal_bursa || "-";
 
         const buyersHtml = (item.top_buyers || []).map(b => `
           <div class="flex justify-between items-center text-[11px] py-1.5 border-b border-stroke/60 last:border-0">
@@ -1434,9 +1440,15 @@
                   <span class="text-xs font-mono font-bold text-emerald-400 bg-elevated border border-stroke px-2.5 py-0.5 rounded-lg">${item.persen_naik >= 0 ? '+' : ''}${item.persen_naik}%</span>
                   <span class="text-[11px] font-mono text-slate-400">Val Rp ${item.nilai_transaksi_miliar}M</span>
                 </div>
-                <p class="text-xs font-semibold text-slate-300 mt-1">${item.status_bandar} <span class="text-slate-600 mx-1">•</span> Dominasi Top 3: <span class="text-emerald-400 font-mono">${item.dominasi_top3}%</span></p>
+                <div class="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-canvas border border-stroke text-[10px] font-mono text-sky-400">
+                  <span>Tanggal Call:</span>
+                  <strong class="text-white">${tanggalCall}</strong>
+                  <span class="text-slate-600">•</span>
+                  <span>${jamUpdateWIB}</span>
+                </div>
+                <p class="text-xs font-semibold text-slate-300 mt-1.5">${item.status_bandar} <span class="text-slate-600 mx-1">•</span> Dominasi Top 3: <span class="text-emerald-400 font-mono">${item.dominasi_top3}%</span></p>
               </div>
-              <span class="px-3 py-1 text-[11px] font-mono font-bold rounded-lg border ${badgeStyle}">${item.sinyal}</span>
+              <span class="px-3 py-1 text-[11px] font-mono font-bold rounded-lg border shrink-0 ${badgeStyle}">${item.sinyal}</span>
             </div>
 
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
@@ -1453,12 +1465,24 @@
               <div class="bg-canvas border border-stroke rounded-xl p-3">
                 <span class="text-[10px] text-slate-400 block">Target TP (+3%)</span>
                 <span class="font-mono font-bold text-emerald-400 text-sm block mt-0.5">${formatIdr(item.target_tp)}</span>
-                <span class="font-mono text-[10px] text-emerald-500/90">Net +${formatIdr(estNetProfit)}</span>
+                <span class="font-mono text-[10px] text-emerald-500/90">Exit Profit Disiplin</span>
               </div>
               <div class="bg-canvas border border-stroke rounded-xl p-3">
-                <span class="text-[10px] text-slate-400 block">Cut Loss (-2%)</span>
+                <span class="text-[10px] text-slate-400 block">Cut Loss / SL (-2%)</span>
                 <span class="font-mono font-bold text-rose-400 text-sm block mt-0.5">${formatIdr(item.cut_loss)}</span>
-                <span class="font-mono text-[10px] text-rose-500/90">Net -${formatIdr(estNetLoss)}</span>
+                <span class="font-mono text-[10px] text-rose-500/90">Wajib SL jika tembus</span>
+              </div>
+            </div>
+
+            <!-- Panduan Exit TP/SL agar pengguna tidak bingung -->
+            <div class="bg-canvas/80 border border-stroke rounded-xl px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono">
+              <span class="text-slate-400">Panduan Exit (${tanggalCall}):</span>
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-emerald-400 font-bold">TP: ${formatIdr(item.target_tp)}</span>
+                <span class="text-slate-600">|</span>
+                <span class="text-rose-400 font-bold">SL: ${formatIdr(item.cut_loss)}</span>
+                <span class="text-slate-600">|</span>
+                <span class="text-amber-300">Max Hold 15:50 WIB</span>
               </div>
             </div>
 
@@ -1468,7 +1492,7 @@
                 <div class="flex items-center gap-2">
                   <input id="open-${item.ticker}" type="number" placeholder="Harga Open..." oninput="cekGapOpen('${item.ticker}', ${item.harga_close}, ${item.max_beli_pagi})"
                     class="w-28 sm:w-32 bg-surface border border-stroke focus:border-emerald-400 rounded-lg px-2.5 py-1 text-xs font-mono text-white outline-none" />
-                  <span class="text-[11px] font-mono text-sky-400 font-bold">${maksLot} Lot</span>
+                  <span id="badge-open-${item.ticker}" class="text-[10px] font-mono px-2 py-0.5 rounded bg-elevated text-slate-300 border border-stroke font-bold">CEK OPEN</span>
                 </div>
               </div>
               <p id="hasil-open-${item.ticker}" class="text-[11px] font-mono text-slate-400 mt-1.5">Masukkan harga pembukaan 09:00 WIB untuk validasi gap.</p>
@@ -1491,14 +1515,9 @@
             </div>
 
             <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-stroke text-xs">
-              <div class="flex items-center gap-2">
-                <button onclick="bukaModalTrade('${item.ticker}', ${item.harga_close}, ${item.target_tp}, ${item.cut_loss})" class="bg-emerald-500 hover:bg-emerald-400 text-canvas font-bold px-3.5 py-1.5 rounded-xl transition">
-                  + Catat Entry
-                </button>
-                <button onclick="salinPlanEmiten('${item.ticker}')" class="bg-elevated hover:bg-stroke border border-stroke text-slate-200 font-semibold px-3 py-1.5 rounded-xl transition">
-                  Salin Plan
-                </button>
-              </div>
+              <button onclick="salinPlanEmiten('${item.ticker}')" class="bg-elevated hover:bg-stroke border border-stroke text-slate-200 font-semibold px-3.5 py-1.5 rounded-xl transition">
+                Salin Plan
+              </button>
               <div class="flex items-center gap-2.5 font-mono text-[11px]">
                 <a href="https://www.tradingview.com/chart/?symbol=IDX:${item.ticker}" target="_blank" rel="noopener" class="text-sky-400 hover:underline">TradingView ↗</a>
                 <span class="text-slate-700">|</span>
@@ -1533,9 +1552,6 @@
         </tr>`).join("");
     }
 
-    const savedFee = localStorage.getItem("fee_total") || "0.40";
-    document.getElementById("input-fee").value = savedFee;
-    document.getElementById("label-fee-total").textContent = savedFee;
     updateClockWIB();
     setInterval(updateClockWIB, 10000);
     initFirebaseApp();
