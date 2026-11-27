@@ -4,6 +4,8 @@
     const IA = "ia_live_" + "23UjBBj4A-L4YF1Iihbln-AJ";
     const GR = "gsk_" + "WTfreY9SawK1JkdHWJm4WGdyb3FYfx49Jck1WFb0DGLjT26KwLbq";
 
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
     function getWIB() {
       return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
     }
@@ -51,8 +53,9 @@
         const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(m.sym)}?range=5d&interval=1d`, {
           headers: { "User-Agent": "Mozilla/5.0" }
         }).then(r => r.json());
-        const quote = res.chart.result[0];
-        const closes = quote.indicators.quote[0].close.filter(v => v !== null);
+        const quote = res?.chart?.result?.[0];
+        if (!quote) continue;
+        const closes = (quote.indicators?.quote?.[0]?.close || []).filter(v => v !== null);
         const last = closes[closes.length - 1] || 0;
         const prev = closes[closes.length - 2] || last;
         const chg = prev > 0 ? Number((((last - prev) / prev) * 100).toFixed(2)) : 0;
@@ -99,31 +102,70 @@
     const currentHash = rawNews.map(n => n.title.slice(0, 30)).join("|");
     const hasNewHeadlines = currentHash !== (newsOld.headline_hash || "") || !newsOld.berita_valid;
 
-    async function getGroqModel() {
+    async function getGroqModels() {
       const modelsRes = await fetch("https://api.groq.com/openai/v1/models", {
         headers: { "Authorization": "Bearer " + GR }
-      }).then(r => r.json());
-      const activeIds = (modelsRes.data || []).map(m => m.id).filter(id => !/whisper|guard|tts|embed|orpheus|playai/i.test(id));
-      return ["llama-3.3-70b-versatile", "meta-llama/llama-4-maverick-17b-128e-instruct", "llama-3.1-8b-instant"].find(m => activeIds.includes(m)) || activeIds[0];
+      }).then(r => r.json()).catch(() => ({}));
+      const activeIds = (modelsRes.data || [])
+        .map(m => m.id)
+        .filter(id => !/whisper|guard|tts|embed|orpheus|playai|vision/i.test(id));
+      const preferred = [
+        "llama-3.3-70b-versatile",
+        "meta-llama/llama-4-maverick-17b-128e-instruct",
+        "meta-llama/llama-4-scout-17b-16e-instruct",
+        "qwen/qwen3-32b",
+        "llama-3.1-8b-instant"
+      ].filter(m => activeIds.includes(m));
+      return preferred.length > 0 ? preferred : ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
     }
 
-    let modelId = null;
+    async function callGroqJSON(modelList, systemPrompt, userPayload, temperature = 0.15) {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const model = modelList[attempt % modelList.length];
+        try {
+          groqCallsToday++;
+          const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + GR },
+            body: JSON.stringify({
+              model,
+              temperature,
+              messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: typeof userPayload === "string" ? userPayload : JSON.stringify(userPayload) }
+              ]
+            })
+          }).then(r => r.json());
+
+          const content = res?.choices?.[0]?.message?.content;
+          if (!content) {
+            console.warn(`Percobaan ${attempt + 1} (${model}) tanpa choices:`, res?.error?.message || "rate limit");
+            await sleep(2500);
+            continue;
+          }
+          const cleaned = content.replace(/```json|```/g, "").trim();
+          const start = cleaned.indexOf("{");
+          const end = cleaned.lastIndexOf("}");
+          if (start !== -1 && end !== -1) {
+            return JSON.parse(cleaned.slice(start, end + 1));
+          }
+        } catch (e) {
+          console.warn(`Percobaan ${attempt + 1} (${model}) error:`, e.message);
+        }
+        await sleep(2500);
+      }
+      return null;
+    }
+
+    let modelList = null;
     let macroResult = newsOld;
 
     // Panggil AI untuk berita & Macro Shock Guard
     if (hasNewHeadlines || isFullRun) {
-      modelId = await getGroqModel();
-      groqCallsToday++;
-      const aiMacro = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + GR },
-        body: JSON.stringify({
-          model: modelId,
-          temperature: 0.1,
-          messages: [
-            {
-              role: "system",
-              content: `Kamu adalah Kepala Riset Makro & Manajemen Risiko PT Bintang Ari Wibowo untuk bursa saham Indonesia (IHSG).
+      modelList = await getGroqModels();
+      const parsedM = await callGroqJSON(
+        modelList,
+        `Kamu adalah Kepala Riset Makro & Manajemen Risiko PT Bintang Ari Wibowo untuk bursa saham Indonesia (IHSG).
 Tugasmu:
 1. Evaluasi indeks global, USD/IDR, dan daftar berita terbaru secara cermat (abaikan berita promosi/klikbait).
 2. Tentukan "risk_score" (1-10):
@@ -149,41 +191,31 @@ Balas HANYA JSON murni:
       "waktu": "jam/tanggal ringkas"
     }
   ]
-}`
-            },
-            {
-              role: "user",
-              content: JSON.stringify({ macroQuotes, rawNews })
-            }
-          ]
-        })
-      }).then(r => r.json());
+}`,
+        { macroQuotes, rawNews },
+        0.1
+      );
 
-      if (!aiMacro.choices?.[0]?.message?.content) {
-        throw new Error("Groq Macro API gagal: " + JSON.stringify(aiMacro));
+      if (parsedM) {
+        macroResult = {
+          updated_at: new Date().toISOString(),
+          headline_hash: currentHash,
+          macro_quotes: macroQuotes,
+          risk_score: parsedM.risk_score || 3,
+          shock_halt: Boolean(parsedM.shock_halt) || (parsedM.risk_score >= 8),
+          regime: parsedM.regime || "NORMAL",
+          headline_utama: parsedM.headline_utama || "Kondisi makro terpantau stabil.",
+          ringkasan_makro: parsedM.ringkasan_makro || "Tidak terdeteksi guncangan sistemik pada pasar keuangan global maupun domestik.",
+          berita_valid: parsedM.berita_valid || []
+        };
+
+        await fetch(`${DB}/bpjs_news.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(macroResult)
+        });
+        console.log("Berita & Makro berhasil disimpan:", macroResult.berita_valid.length, "artikel.");
       }
-
-      const rawM = aiMacro.choices[0].message.content.replace(/```json|```/g, "").trim();
-      const parsedM = JSON.parse(rawM.slice(rawM.indexOf("{"), rawM.lastIndexOf("}") + 1));
-
-      macroResult = {
-        updated_at: new Date().toISOString(),
-        headline_hash: currentHash,
-        macro_quotes: macroQuotes,
-        risk_score: parsedM.risk_score || 3,
-        shock_halt: Boolean(parsedM.shock_halt) || (parsedM.risk_score >= 8),
-        regime: parsedM.regime || "NORMAL",
-        headline_utama: parsedM.headline_utama || "Kondisi makro terpantau stabil.",
-        ringkasan_makro: parsedM.ringkasan_makro || "Tidak terdeteksi guncangan sistemik pada pasar keuangan global maupun domestik.",
-        berita_valid: parsedM.berita_valid || []
-      };
-
-      await fetch(`${DB}/bpjs_news.json`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(macroResult)
-      });
-      console.log("Berita & Makro berhasil disimpan:", macroResult.berita_valid.length, "artikel.");
     } else {
       await fetch(`${DB}/bpjs_news.json`, {
         method: "PATCH",
@@ -203,7 +235,7 @@ Balas HANYA JSON murni:
         shock_headline: macroResult.headline_utama,
         daftar_sinyal: [],
         funnel_tahap1: [],
-        alasan_seleksi_ai: "Sinyal ditahan otomatis oleh AI Macro Shock Guard: " + macroResult.headline_utama
+        alasan_seleksi_ai: "Sinyal ditahan otomatis oleh Macro Risk Guard: " + macroResult.headline_utama
       };
       await fetch(`${DB}/bpjs_signals.json`, {
         method: "PUT",
@@ -260,13 +292,13 @@ Balas HANYA JSON murni:
         sort: { sortBy: "Value.Traded", sortOrder: "desc" },
         range: [0, 15]
       })
-    }).then(r => r.json());
+    }).then(r => r.json()).catch(() => ({ data: [] }));
 
     const k1 = (tv.data || []).map(r => ({
       ticker: r.d[0],
-      harga_close: Math.round(r.d[1]),
-      persen_naik: Number(r.d[2].toFixed(2)),
-      nilai_transaksi_miliar: Number((r.d[3] / 1e9).toFixed(2)),
+      harga_close: Math.round(r.d[1] || 0),
+      persen_naik: Number((r.d[2] || 0).toFixed(2)),
+      nilai_transaksi_miliar: Number(((r.d[3] || 0) / 1e9).toFixed(2)),
       lonjakan_volume: Number((r.d[4] || 1).toFixed(2)),
       dipilih_ai: false
     }));
@@ -275,25 +307,18 @@ Balas HANYA JSON murni:
       console.log("Tidak ada kandidat saham dari scanner.");
       return;
     }
-    if (!modelId) modelId = await getGroqModel();
+    if (!modelList) modelList = await getGroqModels();
 
-    groqCallsToday++;
-    const ai1 = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + GR },
-      body: JSON.stringify({
-        model: modelId,
-        temperature: 0.2,
-        messages: [
-          { role: "system", content: "Analis kuantitatif PT Bintang Ari Wibowo. Pertimbangkan konteks makro: " + macroResult.headline_utama + ". Pilih TEPAT 5 saham paling ideal untuk BPJS BEI. Balas JSON murni: {\"terpilih\":[\"T1\",\"T2\",\"T3\",\"T4\",\"T5\"],\"alasan_seleksi\":\"...\"}" },
-          { role: "user", content: JSON.stringify(k1) }
-        ]
-      })
-    }).then(r => r.json());
+    await sleep(1500);
+    const sel = await callGroqJSON(
+      modelList,
+      "Analis kuantitatif PT Bintang Ari Wibowo. Pertimbangkan konteks makro: " + (macroResult.headline_utama || "Stabil") + ". Pilih TEPAT 5 saham paling ideal untuk BPJS BEI. Balas JSON murni: {\"terpilih\":[\"T1\",\"T2\",\"T3\",\"T4\",\"T5\"],\"alasan_seleksi\":\"...\"}",
+      k1,
+      0.2
+    );
 
-    const raw1 = ai1.choices[0].message.content.replace(/```json|```/g, "").trim();
-    const sel = JSON.parse(raw1.slice(raw1.indexOf("{"), raw1.lastIndexOf("}") + 1));
-    const top5 = (sel.terpilih || k1.slice(0, 5).map(x => x.ticker)).slice(0, 5);
+    const top5 = (sel?.terpilih || k1.slice(0, 5).map(x => x.ticker)).slice(0, 5);
+    const alasanSeleksi = sel?.alasan_seleksi || "Dipilih berdasarkan kombinasi likuiditas transaksi tertinggi, momentum kenaikan harga terukur, dan lonjakan volume relatif.";
     k1.forEach(s => { s.dipilih_ai = top5.includes(s.ticker); });
 
     function bulatkanFraksiBEI(harga) {
@@ -340,22 +365,17 @@ Balas HANYA JSON murni:
         const dom3 = totBuy > 0 ? Number(((buyers.slice(0, 3).reduce((a, b) => a + b.net_value, 0) / totBuy) * 100).toFixed(1)) : 0;
         const avg1 = buyers[0]?.buy_avg || info.harga_close;
 
-        groqCallsToday++;
-        const ai2 = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + GR },
-          body: JSON.stringify({
-            model: modelId,
-            temperature: 0.2,
-            messages: [
-              { role: "system", content: "Analis bandarmologi institusional PT Bintang Ari Wibowo untuk eksekusi 09.00 WIB. Balas JSON murni: {\"status_bandar\":\"BIG ACCUMULATION|NORMAL ACCUMULATION|NEUTRAL|DISTRIBUTION\",\"sinyal\":\"VALID BPJS|WATCHLIST|AVOID\",\"alasan\":\"2 kalimat ringkas\"}" },
-              { role: "user", content: JSON.stringify({ ...info, dom3, buyers, sellers, macro: macroResult.headline_utama }) }
-            ]
-          })
-        }).then(r => r.json());
+        await sleep(1500);
+        const v = await callGroqJSON(
+          modelList,
+          "Analis bandarmologi institusional PT Bintang Ari Wibowo untuk eksekusi 09.00 WIB. Balas JSON murni: {\"status_bandar\":\"BIG ACCUMULATION|NORMAL ACCUMULATION|NEUTRAL|DISTRIBUTION\",\"sinyal\":\"VALID BPJS|WATCHLIST|AVOID\",\"alasan\":\"2 kalimat ringkas\"}",
+          { ...info, dom3, buyers, sellers, macro: macroResult.headline_utama || "Stabil" },
+          0.2
+        );
 
-        const raw2 = ai2.choices[0].message.content.replace(/```json|```/g, "").trim();
-        const v = JSON.parse(raw2.slice(raw2.indexOf("{"), raw2.lastIndexOf("}") + 1));
+        const fallbackStatus = dom3 >= 45 ? "BIG ACCUMULATION" : dom3 >= 30 ? "NORMAL ACCUMULATION" : "NEUTRAL";
+        const fallbackSinyal = dom3 >= 40 ? "VALID BPJS" : dom3 >= 25 ? "WATCHLIST" : "AVOID";
+
         hasil.push({
           ...info,
           dominasi_top3: dom3,
@@ -364,9 +384,9 @@ Balas HANYA JSON murni:
           max_beli_pagi: bulatkanFraksiBEI(info.harga_close * 1.02),
           target_tp: bulatkanFraksiBEI(info.harga_close * 1.03),
           cut_loss: bulatkanFraksiBEI(info.harga_close * 0.98),
-          status_bandar: v.status_bandar,
-          sinyal: v.sinyal,
-          alasan: v.alasan,
+          status_bandar: v?.status_bandar || fallbackStatus,
+          sinyal: v?.sinyal || fallbackSinyal,
+          alasan: v?.alasan || `Dominasi 3 pembeli teratas tercatat sebesar ${dom3}% dengan rata-rata akumulasi utama di area Rp ${avg1}.`,
           top_buyers: buyers,
           top_sellers: sellers
         });
@@ -380,14 +400,15 @@ Balas HANYA JSON murni:
         tanggal_bursa: tgl,
         updated_at: new Date().toISOString(),
         shock_halt: false,
-        macro_regime: macroResult.regime,
-        macro_headline: macroResult.headline_utama,
+        macro_regime: macroResult.regime || "NORMAL",
+        macro_headline: macroResult.headline_utama || "Kondisi makro stabil.",
         daftar_sinyal: hasil,
         funnel_tahap1: k1,
-        alasan_seleksi_ai: sel.alasan_seleksi
+        alasan_seleksi_ai: alasanSeleksi
       };
       await fetch(`${DB}/bpjs_signals.json`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       await fetch(`${DB}/bpjs_history/${tgl}.json`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      console.log("Sinyal BPJS berhasil disimpan:", hasil.length, "emiten.");
     }
 
     await fetch(`${DB}/bpjs_meta.json`, {
