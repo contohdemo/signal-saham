@@ -90,7 +90,6 @@
       } catch (_) {}
     }
 
-    // Deduplikasi judul berita
     const seenTitles = new Set();
     rawNews = rawNews.filter(n => {
       const key = n.title.toLowerCase().slice(0, 45);
@@ -160,7 +159,6 @@
     let modelList = null;
     let macroResult = newsOld;
 
-    // Panggil AI untuk berita & Macro Shock Guard
     if (hasNewHeadlines || isFullRun) {
       modelList = await getGroqModels();
       const parsedM = await callGroqJSON(
@@ -225,7 +223,6 @@ Balas HANYA JSON murni:
       console.log("Quote makro diperbarui.");
     }
 
-    // JIKA TERDETEKSI GUNCANGAN PASAR (SHOCK HALT)
     if (macroResult.shock_halt) {
       const haltPayload = {
         tanggal_bursa: targetEod,
@@ -259,7 +256,6 @@ Balas HANYA JSON murni:
       return;
     }
 
-    // 3. JIKA MODE HANYA BERITA, BERHENTI DI SINI
     if (!isFullRun) {
       await fetch(`${DB}/bpjs_meta.json`, {
         method: "PATCH",
@@ -276,32 +272,59 @@ Balas HANYA JSON murni:
       return;
     }
 
-    // 4. FULL SCAN (08:00 WIB): SCREENING & BROKER SUMMARY
+    // 4. FULL SCAN (08:00 WIB): MODE AGRESIF BPJS SECOND-LINER & VOLUME SPIKE
     let tgl = targetEod;
-    const tv = await fetch("https://scanner.tradingview.com/indonesia/scan", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "User-Agent": "Mozilla/5.0" },
-      body: JSON.stringify({
-        filter: [
-          { left: "Value.Traded", operation: "greater", right: 10000000000 },
-          { left: "change", operation: "in_range", right: [1.0, 9.5] },
-          { left: "close", operation: "greater", right: 100 }
-        ],
-        symbols: { query: { types: ["stock"] }, tickers: [] },
-        columns: ["name", "close", "change", "Value.Traded", "relative_volume_10d_calc"],
-        sort: { sortBy: "Value.Traded", sortOrder: "desc" },
-        range: [0, 15]
-      })
-    }).then(r => r.json()).catch(() => ({ data: [] }));
 
-    const k1 = (tv.data || []).map(r => ({
-      ticker: r.d[0],
-      harga_close: Math.round(r.d[1] || 0),
-      persen_naik: Number((r.d[2] || 0).toFixed(2)),
-      nilai_transaksi_miliar: Number(((r.d[3] || 0) / 1e9).toFixed(2)),
-      lonjakan_volume: Number((r.d[4] || 1).toFixed(2)),
-      dipilih_ai: false
-    }));
+    async function scanTradingView(agresif = true) {
+      const filter = agresif
+        ? [
+            { left: "Value.Traded", operation: "in_range", right: [15000000000, 600000000000] },
+            { left: "change", operation: "in_range", right: [2.5, 12.0] },
+            { left: "relative_volume_10d_calc", operation: "greater", right: 1.3 },
+            { left: "close", operation: "in_range", right: [100, 15000] }
+          ]
+        : [
+            { left: "Value.Traded", operation: "in_range", right: [10000000000, 600000000000] },
+            { left: "change", operation: "in_range", right: [1.8, 12.0] },
+            { left: "close", operation: "in_range", right: [100, 15000] }
+          ];
+
+      const res = await fetch("https://scanner.tradingview.com/indonesia/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "User-Agent": "Mozilla/5.0" },
+        body: JSON.stringify({
+          filter,
+          symbols: { query: { types: ["stock"] }, tickers: [] },
+          columns: ["name", "close", "change", "Value.Traded", "relative_volume_10d_calc"],
+          sort: { sortBy: "relative_volume_10d_calc", sortOrder: "desc" },
+          range: [0, 20]
+        })
+      }).then(r => r.json()).catch(() => ({ data: [] }));
+
+      return (res.data || []).map(r => ({
+        ticker: r.d[0],
+        harga_close: Math.round(r.d[1] || 0),
+        persen_naik: Number((r.d[2] || 0).toFixed(2)),
+        nilai_transaksi_miliar: Number(((r.d[3] || 0) / 1e9).toFixed(2)),
+        lonjakan_volume: Number((r.d[4] || 1).toFixed(2)),
+        dipilih_ai: false
+      }));
+    }
+
+    let k1 = await scanTradingView(true);
+    if (k1.length < 5) {
+      const kFallback = await scanTradingView(false);
+      const existing = new Set(k1.map(x => x.ticker));
+      for (const item of kFallback) {
+        if (!existing.has(item.ticker)) {
+          k1.push(item);
+          existing.add(item.ticker);
+        }
+        if (k1.length >= 15) break;
+      }
+    } else {
+      k1 = k1.slice(0, 15);
+    }
 
     if (!k1.length) {
       console.log("Tidak ada kandidat saham dari scanner.");
@@ -312,13 +335,13 @@ Balas HANYA JSON murni:
     await sleep(1500);
     const sel = await callGroqJSON(
       modelList,
-      "Analis kuantitatif PT Bintang Ari Wibowo. Pertimbangkan konteks makro: " + (macroResult.headline_utama || "Stabil") + ". Pilih TEPAT 5 saham paling ideal untuk BPJS BEI. Balas JSON murni: {\"terpilih\":[\"T1\",\"T2\",\"T3\",\"T4\",\"T5\"],\"alasan_seleksi\":\"...\"}",
+      "Analis kuantitatif BPJS BEI PT Bintang Ari Wibowo. Konteks makro: " + (macroResult.headline_utama || "Stabil") + ". Pilih TEPAT 5 saham lapis kedua/menengah dengan kombinasi lonjakan volume relatif tertinggi (>1.3x), momentum kenaikan sehat (+2.5% s/d +10%), dan likuiditas aktif untuk potensi lanjutan sesi pagi 09.00 WIB. Hindari emiten perbankan jumbo yang lambat. Balas JSON murni: {\"terpilih\":[\"T1\",\"T2\",\"T3\",\"T4\",\"T5\"],\"alasan_seleksi\":\"...\"}",
       k1,
       0.2
     );
 
     const top5 = (sel?.terpilih || k1.slice(0, 5).map(x => x.ticker)).slice(0, 5);
-    const alasanSeleksi = sel?.alasan_seleksi || "Dipilih berdasarkan kombinasi likuiditas transaksi tertinggi, momentum kenaikan harga terukur, dan lonjakan volume relatif.";
+    const alasanSeleksi = sel?.alasan_seleksi || "Dipilih berdasarkan lonjakan volume relatif tertinggi, momentum harga +2,5% ke atas, dan likuiditas aktif second-liner untuk BPJS.";
     k1.forEach(s => { s.dipilih_ai = top5.includes(s.ticker); });
 
     function bulatkanFraksiBEI(harga) {
@@ -368,13 +391,13 @@ Balas HANYA JSON murni:
         await sleep(1500);
         const v = await callGroqJSON(
           modelList,
-          "Analis bandarmologi institusional PT Bintang Ari Wibowo untuk eksekusi 09.00 WIB. Balas JSON murni: {\"status_bandar\":\"BIG ACCUMULATION|NORMAL ACCUMULATION|NEUTRAL|DISTRIBUTION\",\"sinyal\":\"VALID BPJS|WATCHLIST|AVOID\",\"alasan\":\"2 kalimat ringkas\"}",
+          "Analis bandarmologi institusional PT Bintang Ari Wibowo untuk eksekusi BPJS 09.00 WIB. Berikan 'VALID BPJS' jika dominasi top 3 buyer >= 35% dan akumulasi bersih lebih kuat dari distribusi; 'WATCHLIST' jika dominasi 25%-34% atau akumulasi moderat; 'AVOID' jika distribusi top seller lebih besar atau dominasi < 25%. Balas JSON murni: {\"status_bandar\":\"BIG ACCUMULATION|NORMAL ACCUMULATION|NEUTRAL|DISTRIBUTION\",\"sinyal\":\"VALID BPJS|WATCHLIST|AVOID\",\"alasan\":\"2 kalimat ringkas\"}",
           { ...info, dom3, buyers, sellers, macro: macroResult.headline_utama || "Stabil" },
           0.2
         );
 
-        const fallbackStatus = dom3 >= 45 ? "BIG ACCUMULATION" : dom3 >= 30 ? "NORMAL ACCUMULATION" : "NEUTRAL";
-        const fallbackSinyal = dom3 >= 40 ? "VALID BPJS" : dom3 >= 25 ? "WATCHLIST" : "AVOID";
+        const fallbackStatus = dom3 >= 42 ? "BIG ACCUMULATION" : dom3 >= 30 ? "NORMAL ACCUMULATION" : "NEUTRAL";
+        const fallbackSinyal = dom3 >= 35 ? "VALID BPJS" : dom3 >= 25 ? "WATCHLIST" : "AVOID";
 
         hasil.push({
           ...info,
@@ -386,7 +409,7 @@ Balas HANYA JSON murni:
           cut_loss: bulatkanFraksiBEI(info.harga_close * 0.98),
           status_bandar: v?.status_bandar || fallbackStatus,
           sinyal: v?.sinyal || fallbackSinyal,
-          alasan: v?.alasan || `Dominasi 3 pembeli teratas tercatat sebesar ${dom3}% dengan rata-rata akumulasi utama di area Rp ${avg1}.`,
+          alasan: v?.alasan || `Dominasi 3 pembeli teratas tercatat sebesar ${dom3}% dengan lonjakan volume ${info.lonjakan_volume}x dan rata-rata akumulasi di Rp ${avg1}.`,
           top_buyers: buyers,
           top_sellers: sellers
         });
