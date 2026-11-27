@@ -4,6 +4,12 @@
     const IA = "ia_live_" + "23UjBBj4A-L4YF1Iihbln-AJ";
     const GR = "gsk_" + "WTfreY9SawK1JkdHWJm4WGdyb3FYfx49Jck1WFb0DGLjT26KwLbq";
 
+    const BROWSER_HEADERS = {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7",
+      "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7"
+    };
+
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
     function getWIB() {
@@ -23,22 +29,37 @@
       return wib.toISOString().slice(0, 10);
     }
 
+    function decodeHtmlEntities(str) {
+      return String(str || "")
+        .replace(/&amp;/g, "&")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;|&apos;/g, "'")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
     const wibNow = getWIB();
     const todayStr = wibNow.toISOString().slice(0, 10);
+    const hariIni = wibNow.getDay(); // 0 = Minggu, 6 = Sabtu
+    const isWeekday = hariIni >= 1 && hariIni <= 5;
     const inputMode = process.env.INPUT_MODE || "auto";
+    const isManualDispatch = process.env.GITHUB_EVENT_NAME === "workflow_dispatch";
 
-    // Cek metadata kuota & riwayat run hari ini di Firebase
+    // Cek metadata kuota & data lama di Firebase
     const metaOld = (await fetch(`${DB}/bpjs_meta.json`).then(r => r.json()).catch(() => ({}))) || {};
     const newsOld = (await fetch(`${DB}/bpjs_news.json`).then(r => r.json()).catch(() => ({}))) || {};
     const targetEod = getTglBursa(0);
 
     const sudahScanEodIni = metaOld.last_ia_eod === targetEod && (metaOld.ia_used_today || 0) > 0;
-    const isFullRun = inputMode === "full" || (!sudahScanEodIni && (wibNow.getHours() === 8 || inputMode === "auto"));
+    // Full scan (kuota Index Alpha 5x/hari) hanya jalan jam 08:00 WIB hari kerja atau mode 'full'
+    const isFullRun = inputMode === "full" || (isWeekday && wibNow.getHours() === 8 && !sudahScanEodIni && inputMode === "auto");
 
     let groqCallsToday = metaOld.quota_date === todayStr ? (metaOld.groq_calls_today || 0) : 0;
     let iaUsedToday = metaOld.quota_date === todayStr ? (metaOld.ia_used_today || 0) : 0;
 
-    // 1. TARIK DATA MAKRO GLOBAL & KURS (0 Kuota API)
+    // 1. TARIK DATA MAKRO GLOBAL & KURS (Multi-endpoint + Fallback Data Lama)
     const macroSymbols = [
       { sym: "^JKSE", name: "IHSG" },
       { sym: "IDR=X", name: "USD/IDR" },
@@ -47,47 +68,84 @@
       { sym: "^HSI", name: "Hang Seng" }
     ];
 
-    const macroQuotes = [];
-    for (const m of macroSymbols) {
-      try {
-        const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(m.sym)}?range=5d&interval=1d`, {
-          headers: { "User-Agent": "Mozilla/5.0" }
-        }).then(r => r.json());
-        const quote = res?.chart?.result?.[0];
-        if (!quote) continue;
-        const closes = (quote.indicators?.quote?.[0]?.close || []).filter(v => v !== null);
-        const last = closes[closes.length - 1] || 0;
-        const prev = closes[closes.length - 2] || last;
-        const chg = prev > 0 ? Number((((last - prev) / prev) * 100).toFixed(2)) : 0;
-        macroQuotes.push({
-          name: m.name,
-          price: m.sym === "IDR=X" ? Math.round(last) : Number(last.toFixed(2)),
-          change_pct: chg
-        });
-      } catch (_) {}
+    const oldQuotesMap = new Map(
+      (Array.isArray(newsOld.macro_quotes) ? newsOld.macro_quotes : []).map(q => [q.name, q])
+    );
+
+    async function fetchYahooQuote(sym) {
+      const endpoints = [
+        `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=5d&interval=1d`,
+        `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=5d&interval=1d`
+      ];
+      for (const url of endpoints) {
+        try {
+          const r = await fetch(url, { headers: { ...BROWSER_HEADERS, "Accept": "application/json" } });
+          if (!r.ok) continue;
+          const res = await r.json();
+          const result = res?.chart?.result?.[0];
+          if (!result) continue;
+
+          const meta = result.meta || {};
+          const closes = (result.indicators?.quote?.[0]?.close || []).filter(v => typeof v === "number" && v > 0);
+          const last = meta.regularMarketPrice || closes[closes.length - 1] || 0;
+          const prev = (closes.length >= 2 ? closes[closes.length - 2] : 0) || meta.chartPreviousClose || meta.previousClose || last;
+
+          if (last > 0) {
+            const chg = prev > 0 ? Number((((last - prev) / prev) * 100).toFixed(2)) : 0;
+            return { price: last, change_pct: chg };
+          }
+        } catch (_) {}
+      }
+      return null;
     }
 
-    // 2. TARIK RSS BERITA EKONOMI & PASAR MODAL KREDIBEL (0 Kuota API)
+    const macroQuotes = [];
+    for (const m of macroSymbols) {
+      const fresh = await fetchYahooQuote(m.sym);
+      if (fresh) {
+        macroQuotes.push({
+          name: m.name,
+          price: m.sym === "IDR=X" ? Math.round(fresh.price) : Number(fresh.price.toFixed(2)),
+          change_pct: fresh.change_pct
+        });
+      } else if (oldQuotesMap.has(m.name)) {
+        macroQuotes.push(oldQuotesMap.get(m.name));
+      }
+    }
+    console.log(`Makro quotes berhasil dimuat: ${macroQuotes.length}/${macroSymbols.length}`);
+
+    // 2. TARIK RSS BERITA EKONOMI & PASAR MODAL KREDIBEL
     const rssUrls = [
       { url: "https://www.cnbcindonesia.com/market/rss", sumber: "CNBC Indonesia" },
       { url: "https://investasi.kontan.co.id/rss", sumber: "Kontan Investasi" },
-      { url: "https://news.google.com/rss/search?q=IHSG+OR+MSCI+OR+BEI+OR+%22trading+halt%22+OR+%22Bank+Indonesia%22&hl=id&gl=ID&ceid=ID:id", sumber: "Google News Market" }
+      { url: "https://www.antaranews.com/rss/ekonomi.xml", sumber: "ANTARA Ekonomi" },
+      { url: "https://news.google.com/rss/search?q=IHSG+OR+saham+OR+%22Bank+Indonesia%22+OR+rupiah+OR+BEI&hl=id&gl=ID&ceid=ID:id", sumber: "Google News Market" }
     ];
 
     let rawNews = [];
     for (const feed of rssUrls) {
       try {
-        const xml = await fetch(feed.url, { headers: { "User-Agent": "Mozilla/5.0" } }).then(r => r.text());
+        const resp = await fetch(feed.url, { headers: BROWSER_HEADERS });
+        if (!resp.ok) {
+          console.warn(`RSS ${feed.sumber} status HTTP ${resp.status}`);
+          continue;
+        }
+        const xml = await resp.text();
         const items = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
         for (const item of items.slice(0, 6)) {
-          const title = (item.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/)?.[1] || item.match(/<title>([\s\S]*?)<\/title>/)?.[1] || "").replace(/<[^>]+>/g, "").trim();
-          const link = (item.match(/<link><!\[CDATA\[([\s\S]*?)\]\]><\/link>/)?.[1] || item.match(/<link>([\s\S]*?)<\/link>/)?.[1] || "").trim();
+          const rawTitle = item.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/)?.[1] || item.match(/<title>([\s\S]*?)<\/title>/)?.[1] || "";
+          const rawLink = item.match(/<link><!\[CDATA\[([\s\S]*?)\]\]><\/link>/)?.[1] || item.match(/<link>([\s\S]*?)<\/link>/)?.[1] || "";
           const pubDate = (item.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1] || "").trim();
-          if (title && link) {
+
+          const title = decodeHtmlEntities(rawTitle.replace(/<[^>]+>/g, ""));
+          const link = decodeHtmlEntities(rawLink);
+          if (title && link && link.startsWith("http")) {
             rawNews.push({ title, link, pubDate, sumber: feed.sumber });
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        console.warn(`RSS ${feed.sumber} gagal:`, e.message);
+      }
     }
 
     const seenTitles = new Set();
@@ -96,10 +154,18 @@
       if (seenTitles.has(key)) return false;
       seenTitles.add(key);
       return true;
-    }).slice(0, 14);
+    }).slice(0, 15);
+
+    console.log(`Total berita RSS terkumpul: ${rawNews.length} artikel.`);
 
     const currentHash = rawNews.map(n => n.title.slice(0, 30)).join("|");
-    const hasNewHeadlines = currentHash !== (newsOld.headline_hash || "") || !newsOld.berita_valid;
+    const hasExistingNews = Array.isArray(newsOld.berita_valid) && newsOld.berita_valid.length > 0;
+    const hasNewHeadlines = rawNews.length > 0 && (
+      currentHash !== (newsOld.headline_hash || "") ||
+      !hasExistingNews ||
+      isManualDispatch ||
+      inputMode === "news_only"
+    );
 
     async function getGroqModels() {
       const modelsRes = await fetch("https://api.groq.com/openai/v1/models", {
@@ -159,19 +225,19 @@
     let modelList = null;
     let macroResult = newsOld;
 
-    if (hasNewHeadlines || isFullRun) {
+    if (hasNewHeadlines || (isFullRun && rawNews.length > 0)) {
       modelList = await getGroqModels();
       const parsedM = await callGroqJSON(
         modelList,
         `Kamu adalah Kepala Riset Makro & Manajemen Risiko PT Bintang Ari Wibowo untuk bursa saham Indonesia (IHSG).
 Tugasmu:
-1. Evaluasi indeks global, USD/IDR, dan daftar berita terbaru secara cermat (abaikan berita promosi/klikbait).
+1. Evaluasi indeks global, USD/IDR, dan daftar berita terbaru secara cermat (abaikan berita promosi/klikbait). Jika hari libur/akhir pekan, sebutkan bahwa IHSG berada di posisi penutupan terakhir.
 2. Tentukan "risk_score" (1-10):
-   - 1-4: Pasar normal/kondusif.
-   - 5-7: Katalis positif kuat (bullish IHSG / inflow asing).
-   - 8-10: GUNCANGAN SISTEMIK NYATA (contoh: pengumuman/rebalancing MSCI yang memicu outflow besar atau potensi trading halt IHSG, krisis perbankan/geopolitik akut, atau indeks global/Rupiah anjlok parah).
+  - 1-4: Pasar normal/kondusif.
+  - 5-7: Katalis positif kuat (bullish IHSG / inflow asing) atau kewaspadaan moderat.
+  - 8-10: GUNCANGAN SISTEMIK NYATA (contoh: pengumuman/rebalancing MSCI yang memicu outflow besar atau potensi trading halt IHSG, krisis perbankan/geopolitik akut, atau indeks global/Rupiah anjlok parah).
 3. Set "shock_halt": true HANYA JIKA risk_score >= 8 (terbukti valid ada guncangan besar yang berbahaya untuk entry pagi).
-4. Kurasi maksimal 6 berita paling valid & berdampak ke pasar.
+4. Kurasi maksimal 6 berita paling valid & berdampak ke pasar dari daftar rawNews yang diberikan.
 Balas HANYA JSON murni:
 {
   "risk_score": 3,
@@ -190,21 +256,21 @@ Balas HANYA JSON murni:
     }
   ]
 }`,
-        { macroQuotes, rawNews },
+        { waktu_wib: wibNow.toISOString(), is_weekend: !isWeekday, macroQuotes, rawNews },
         0.1
       );
 
-      if (parsedM) {
+      if (parsedM && Array.isArray(parsedM.berita_valid) && parsedM.berita_valid.length > 0) {
         macroResult = {
           updated_at: new Date().toISOString(),
           headline_hash: currentHash,
-          macro_quotes: macroQuotes,
+          macro_quotes: macroQuotes.length > 0 ? macroQuotes : (newsOld.macro_quotes || []),
           risk_score: parsedM.risk_score || 3,
           shock_halt: Boolean(parsedM.shock_halt) || (parsedM.risk_score >= 8),
           regime: parsedM.regime || "NORMAL",
           headline_utama: parsedM.headline_utama || "Kondisi makro terpantau stabil.",
           ringkasan_makro: parsedM.ringkasan_makro || "Tidak terdeteksi guncangan sistemik pada pasar keuangan global maupun domestik.",
-          berita_valid: parsedM.berita_valid || []
+          berita_valid: parsedM.berita_valid
         };
 
         await fetch(`${DB}/bpjs_news.json`, {
@@ -213,14 +279,21 @@ Balas HANYA JSON murni:
           body: JSON.stringify(macroResult)
         });
         console.log("Berita & Makro berhasil disimpan:", macroResult.berita_valid.length, "artikel.");
+      } else if (macroQuotes.length > 0) {
+        await fetch(`${DB}/bpjs_news.json`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ macro_quotes: macroQuotes, updated_at: new Date().toISOString() })
+        });
+        console.log("Parsing AI kosong, hanya quote makro yang diperbarui.");
       }
-    } else {
+    } else if (macroQuotes.length > 0) {
       await fetch(`${DB}/bpjs_news.json`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ macro_quotes: macroQuotes, updated_at: new Date().toISOString() })
       });
-      console.log("Quote makro diperbarui.");
+      console.log("Headline belum berubah, quote makro diperbarui.");
     }
 
     if (macroResult.shock_halt) {
@@ -291,7 +364,7 @@ Balas HANYA JSON murni:
 
       const res = await fetch("https://scanner.tradingview.com/indonesia/scan", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "User-Agent": "Mozilla/5.0" },
+        headers: { "Content-Type": "application/json", ...BROWSER_HEADERS },
         body: JSON.stringify({
           filter,
           symbols: { query: { types: ["stock"] }, tickers: [] },
