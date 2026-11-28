@@ -825,6 +825,8 @@
     let isAdminUser = false;
     let listenersStarted = false;
     let activeUserRef = null;
+    let isLoggingOut = false;
+    let lastLoggedUid = null;
     let maxHargaFilter = 0; // 0 = Semua Harga
     let deferredInstallPrompt = null;
 
@@ -894,6 +896,10 @@
     }
 
     function catatClientError(modul, pesan, detail = "") {
+      // Abaikan error jaringan/izin yang muncul saat sesi sudah kosong atau sedang proses logout
+      if (isLoggingOut || !currentUser || !firebase.apps.length || !firebase.auth().currentUser) {
+        return;
+      }
       const now = new Date();
       const waktuWib = now.toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", second: "2-digit" }) + " WIB";
       clientRuntimeErrors.unshift({
@@ -908,6 +914,29 @@
       });
       if (clientRuntimeErrors.length > 10) clientRuntimeErrors.length = 10;
       if (isAdminUser) renderAdminMonitor();
+    }
+
+    // MATIKAN SELURUH LISTENER FIREBASE SECARA BERSIH SEBELUM LOGOUT / GANTI AKUN
+    function matikanRealtimeDatabaseListeners() {
+      if (activeUserRef) {
+        try { activeUserRef.off(); } catch (_) {}
+        activeUserRef = null;
+      }
+      if (firebase.apps.length) {
+        const db = firebase.database();
+        [
+          "bpjs_signals",
+          "scalping_signals",
+          "bpjs_history",
+          "bpjs_news",
+          "bpjs_meta",
+          "bpjs_users",
+          "bpjs_errors"
+        ].forEach(node => {
+          try { db.ref(node).off(); } catch (_) {}
+        });
+      }
+      listenersStarted = false;
     }
 
     // DETEKSI MODE PWA STANDALONE (ANTI-BUG TOMBOL DOWNLOAD SAAT SUDAH TERPASANG)
@@ -1181,25 +1210,38 @@
         document.getElementById("boot-loader").classList.add("hidden");
         sinkronkanStatusPWA();
 
-        if (activeUserRef) {
-          activeUserRef.off();
-          activeUserRef = null;
-        }
-
         if (!user) {
+          matikanRealtimeDatabaseListeners();
           currentUser = null;
           isAdminUser = false;
-          listenersStarted = false;
+          lastLoggedUid = null;
+          clientRuntimeErrors = [];
+          serverErrorsRaw = null;
+          isLoggingOut = false;
+
+          tutupModalSettings();
+          gantiMenu("sinyal");
           document.getElementById("main-app").classList.add("hidden");
           document.getElementById("nav-admin").classList.add("hidden");
           document.getElementById("view-admin").classList.add("hidden");
+          document.getElementById("admin-sidebar-card").classList.add("hidden");
+          document.getElementById("admin-only-modal-panel").classList.add("hidden");
           document.getElementById("auth-gate").classList.remove("hidden");
           document.getElementById("auth-state-login").classList.remove("hidden");
           document.getElementById("auth-state-pending").classList.add("hidden");
           return;
         }
 
+        // Jika berganti akun Google pada browser yang sama, bersihkan listener & memori sesi lama
+        if (lastLoggedUid && lastLoggedUid !== user.uid) {
+          matikanRealtimeDatabaseListeners();
+          clientRuntimeErrors = [];
+          serverErrorsRaw = null;
+        }
+        lastLoggedUid = user.uid;
+        isLoggingOut = false;
         currentUser = user;
+
         const emailLower = (user.email || "").toLowerCase();
         isAdminUser = emailLower === ADMIN_EMAIL.toLowerCase();
         const userRef = firebase.database().ref(`bpjs_users/${user.uid}`);
@@ -1234,12 +1276,23 @@
           console.warn("Info sinkronisasi user:", dbErr.message);
         }
 
+        if (activeUserRef) {
+          try { activeUserRef.off(); } catch (_) {}
+        }
         activeUserRef = userRef;
         userRef.on("value", (s) => {
+          if (isLoggingOut || !currentUser) return;
           const uData = s.val() || {};
           if (uData.status === "approved") {
             bukaTerminalUtama(user);
           } else {
+            matikanRealtimeDatabaseListeners();
+            activeUserRef = userRef;
+            userRef.on("value", (s2) => {
+              if (!isLoggingOut && currentUser && (s2.val()?.status === "approved")) {
+                bukaTerminalUtama(user);
+              }
+            });
             document.getElementById("main-app").classList.add("hidden");
             document.getElementById("auth-gate").classList.remove("hidden");
             document.getElementById("auth-state-login").classList.add("hidden");
@@ -1247,6 +1300,7 @@
             document.getElementById("pending-user-email").textContent = user.email;
           }
         }, (err) => {
+          if (isLoggingOut || !currentUser || !firebase.auth().currentUser) return;
           showToast("Gagal memverifikasi status izin (" + err.code + ").", "err");
         });
       });
@@ -1269,8 +1323,14 @@
     }
 
     async function logoutGoogle() {
+      isLoggingOut = true;
+      matikanRealtimeDatabaseListeners();
+      clientRuntimeErrors = [];
+      serverErrorsRaw = null;
       if (firebase.apps.length) {
-        await firebase.auth().signOut();
+        try {
+          await firebase.auth().signOut();
+        } catch (_) {}
       }
     }
 
@@ -1304,7 +1364,6 @@
       }
 
       if (!listenersStarted) {
-        listenersStarted = true;
         mulaiRealtimeDatabaseListeners();
       }
       if (isAdminUser) renderAdminMonitor();
@@ -1312,10 +1371,13 @@
 
     // REAL-TIME FIREBASE LISTENERS
     function mulaiRealtimeDatabaseListeners() {
+      matikanRealtimeDatabaseListeners();
+      listenersStarted = true;
       const db = firebase.database();
 
       // 1. Sinyal BPJS
       db.ref("bpjs_signals").on("value", (snap) => {
+        if (isLoggingOut || !currentUser) return;
         const data = snap.val();
         if (data) {
           appState = data;
@@ -1324,11 +1386,13 @@
           if (isAdminUser) renderAdminMonitor();
         }
       }, (err) => {
+        if (isLoggingOut || !currentUser || !firebase.auth().currentUser) return;
         catatClientError("BPJS", "Gagal membaca node bpjs_signals", err.message);
       });
 
       // 2. Radar Scalping Intraday (LIVE)
       db.ref("scalping_signals").on("value", (snap) => {
+        if (isLoggingOut || !currentUser) return;
         const data = snap.val();
         if (data) {
           scalpState = data;
@@ -1336,21 +1400,25 @@
         renderScalping();
         if (isAdminUser) renderAdminMonitor();
       }, (err) => {
+        if (isLoggingOut || !currentUser || !firebase.auth().currentUser) return;
         catatClientError("SCALPING", "Gagal membaca node scalping_signals", err.message);
       });
 
       // 3. Riwayat Sinyal (History TP/SL)
       db.ref("bpjs_history").on("value", (snap) => {
+        if (isLoggingOut || !currentUser) return;
         historyRawData = snap.val();
         renderHistory();
         renderKartu();
         renderScalping();
       }, (err) => {
+        if (isLoggingOut || !currentUser || !firebase.auth().currentUser) return;
         catatClientError("BPJS", "Gagal membaca node bpjs_history", err.message);
       });
 
       // 4. Berita Valid & Makro Global
       db.ref("bpjs_news").on("value", (snap) => {
+        if (isLoggingOut || !currentUser) return;
         const data = snap.val();
         if (data) {
           newsState = data;
@@ -1360,12 +1428,14 @@
           if (isAdminUser) renderAdminMonitor();
         }
       }, (err) => {
+        if (isLoggingOut || !currentUser || !firebase.auth().currentUser) return;
         catatClientError("NEWS", "Gagal membaca node bpjs_news", err.message);
       });
 
       // 5. ADMIN ONLY: Metadata Kuota API, Whitelist Pengguna & Log Error Server
       if (isAdminUser) {
         db.ref("bpjs_meta").on("value", (snap) => {
+          if (isLoggingOut || !currentUser || !isAdminUser) return;
           const data = snap.val();
           if (data) {
             metaState = data;
@@ -1373,17 +1443,21 @@
             renderAdminMonitor();
           }
         }, (err) => {
+          if (isLoggingOut || !currentUser || !firebase.auth().currentUser) return;
           catatClientError("API", "Gagal membaca node bpjs_meta", err.message);
         });
 
         db.ref("bpjs_users").on("value", (snap) => {
+          if (isLoggingOut || !currentUser || !isAdminUser) return;
           renderDaftarUserAdmin(snap.val() || {});
         });
 
         db.ref("bpjs_errors").limitToLast(25).on("value", (snap) => {
+          if (isLoggingOut || !currentUser || !isAdminUser) return;
           serverErrorsRaw = snap.val();
           renderAdminMonitor();
         }, (err) => {
+          if (isLoggingOut || !currentUser || !firebase.auth().currentUser) return;
           catatClientError("FIREBASE", "Gagal membaca node bpjs_errors", err.message);
         });
       }
