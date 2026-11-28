@@ -99,7 +99,7 @@
         <div class="bg-canvas border border-stroke rounded-xl p-4 space-y-1.5">
           <p class="text-xs font-bold text-white">Akses Sistem Terbatas (Private Terminal)</p>
           <p class="text-xs text-slate-400 leading-relaxed">
-            Terminal intelijen aliran dana institusional, rekomendasi winrate tinggi, radar scalping intraday, riwayat TP/SL, dan pemantauan risiko makro global memerlukan verifikasi akun Google atas perizinan administrator STAR GROUP.
+            Terminal intelijen aliran dana institusional, rekomendasi winrate tinggi, radar scalping intraday, peluang multibagger (+50%), riwayat TP/SL, dan pemantauan risiko makro global memerlukan verifikasi akun Google atas perizinan administrator STAR GROUP.
           </p>
         </div>
 
@@ -203,7 +203,7 @@
         </div>
       </div>
 
-      <!-- Navigation Tabs (+ Admin Monitor Khusus Admin Owner) -->
+      <!-- Navigation Tabs (+ Investment & Admin Monitor) -->
       <div class="max-w-6xl mx-auto px-4 sm:px-6 flex gap-2 border-t border-stroke/80 overflow-x-auto no-scrollbar">
         <button onclick="gantiMenu('sinyal')" id="nav-sinyal" class="nav-tab border-b-2 border-emerald-400 text-emerald-400 text-xs font-bold px-3.5 py-2.5 whitespace-nowrap">
           Sinyal Eksekusi (09:00)
@@ -211,6 +211,10 @@
         <button onclick="gantiMenu('scalping')" id="nav-scalping" class="nav-tab border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-3.5 py-2.5 whitespace-nowrap inline-flex items-center gap-1.5">
           <span id="scalp-nav-dot" class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
           Radar Scalping <span id="badge-scalp" class="ml-0.5 px-1.5 py-0.2 rounded bg-elevated text-[10px] font-mono text-emerald-400 border border-stroke">LIVE</span>
+        </button>
+        <button onclick="gantiMenu('investment')" id="nav-investment" class="nav-tab border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-3.5 py-2.5 whitespace-nowrap inline-flex items-center gap-1.5">
+          <span>Investment (+50% / Multi)</span>
+          <span id="badge-investment" class="px-1.5 py-0.2 rounded bg-elevated text-[10px] font-mono text-emerald-400 border border-stroke">0</span>
         </button>
         <button onclick="gantiMenu('history')" id="nav-history" class="nav-tab border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-3.5 py-2.5 whitespace-nowrap">
           Riwayat Sinyal (TP/SL) <span id="badge-history" class="ml-1 px-1.5 py-0.2 rounded bg-elevated text-[10px] font-mono text-slate-300 border border-stroke">0</span>
@@ -477,6 +481,70 @@
         </div>
       </div>
 
+      <!-- VIEW 1D: INVESTMENT (TARGET +50% – MULTIBAGGER) -->
+      <div id="view-investment" class="hidden space-y-5">
+        <div class="bg-surface border border-stroke rounded-2xl p-4 sm:p-5 space-y-4 shadow-sm">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/40 text-[10px] font-mono font-extrabold text-emerald-400">TARGET +50% – MULTIBAGGER</span>
+                <span id="inv-tanggal-bursa" class="text-[11px] font-mono text-slate-400">Acuan: -</span>
+              </div>
+              <h2 class="text-sm sm:text-base font-extrabold text-white mt-1.5">Peluang Akumulasi Menengah & Katalis Korporasi (3 Pilar)</h2>
+              <p class="text-[11px] text-slate-400 mt-0.5">Seleksi berbasis <strong>Akuisisi / Backdoor / Pengendali Baru</strong>, <strong>Rights Issue Injeksi Aset</strong>, dan <strong>Pertumbuhan EPS Positif</strong> dengan rencana akumulasi bertahap.</p>
+            </div>
+            <span id="inv-regime-badge" class="self-start sm:self-center px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold bg-elevated text-emerald-400 border border-stroke shrink-0">NORMAL</span>
+          </div>
+
+          <p id="inv-ringkasan-strategi" class="text-xs text-slate-200 leading-relaxed bg-canvas p-3.5 rounded-xl border border-stroke">
+            Memuat strategi & kurasi katalis multibagger...
+          </p>
+
+          <!-- Filter Pilar & Batas Harga -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-stroke/80">
+            <div>
+              <label class="text-[10px] font-mono uppercase text-slate-400 block mb-1">Filter Pilar Katalis</label>
+              <select id="filter-inv-pilar" onchange="renderInvestment()" class="w-full bg-canvas border border-stroke rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 outline-none">
+                <option value="ALL">Semua Pilar (3 Katalis)</option>
+                <option value="AKUISISI_BACKDOOR">Akuisisi / Backdoor / Pengendali</option>
+                <option value="RIGHTS_ISSUE_INJEKSI_ASET">Rights Issue / Injeksi Aset</option>
+                <option value="EPS_GROWTH_CATALYST">Pertumbuhan EPS Positif</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] font-mono uppercase text-slate-400 block mb-1">Filter Kelayakan</label>
+              <select id="filter-inv-status" onchange="renderInvestment()" class="w-full bg-canvas border border-stroke rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 outline-none">
+                <option value="ALL">Semua Status</option>
+                <option value="HIGH CONVICTION">High Conviction</option>
+                <option value="ACCUMULATE WATCH">Accumulate Watch</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] font-mono uppercase text-slate-400 block mb-1">Batas Harga Maksimal (Rp)</label>
+              <div class="flex items-center gap-2">
+                <input id="input-max-harga-inv" type="number" min="50" step="10" placeholder="Contoh: 1000 (0 = semua)"
+                  oninput="onInputMaxHarga(this.value)"
+                  class="w-full bg-canvas border border-stroke focus:border-emerald-500 rounded-xl px-3 py-2 text-xs font-mono font-bold text-white outline-none" />
+                <button type="button" onclick="setFilterHarga(0)" class="bg-elevated hover:bg-stroke border border-stroke text-slate-300 text-[11px] font-bold px-2.5 py-2 rounded-xl transition shrink-0">
+                  Reset
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="flex items-center justify-between px-1">
+            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-300">Kandidat Investment & Rencana Akumulasi Bertahap</h3>
+            <span id="count-investment-list" class="text-[11px] font-mono text-slate-400">0 emiten</span>
+          </div>
+          <div id="container-investment" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+
+        <!-- Ringkasan Berita Katalis Korporasi Terdeteksi -->
+        <section id="box-katalis-korporasi" class="bg-surface border border-stroke rounded-2xl p-4 sm:p-5 space-y-3 shadow-sm"></section>
+      </div>
+
       <!-- VIEW 1C: RIWAYAT SINYAL & HASIL TP/SL (HISTORY) -->
       <div id="view-history" class="hidden space-y-4">
         <div class="bg-surface border border-stroke rounded-2xl p-4 sm:p-5 space-y-4 shadow-sm">
@@ -576,7 +644,7 @@
                 <span class="text-[11px] font-mono text-slate-400">STAR GROUP INTERNAL</span>
               </div>
               <h2 class="text-sm sm:text-base font-extrabold text-white mt-1.5">Transparansi Kerja Mesin & Pusat Kontrol Error</h2>
-              <p class="text-[11px] text-slate-400 mt-0.5">Pantau alur kerja BPJS, Radar Scalping Intraday, Berita & Makro, Kuota API, serta catatan error sistem secara real-time.</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Pantau alur kerja BPJS, Radar Scalping Intraday, Investment (+50% / Multi), Berita & Makro, Kuota API, serta catatan error sistem secara real-time.</p>
             </div>
             <div class="flex items-center gap-2 shrink-0 flex-wrap">
               <button type="button" onclick="bukaModalSettings()" class="bg-elevated hover:bg-stroke border border-stroke text-slate-200 text-xs font-bold px-3.5 py-2 rounded-xl transition">
@@ -850,6 +918,17 @@
       daftar_scalping: []
     };
 
+    let investmentState = {
+      tanggal_bursa: "-",
+      updated_at: "-",
+      shock_halt: false,
+      macro_regime: "NORMAL",
+      macro_risk_score: 3,
+      ringkasan_strategi: "Seleksi saham berpotensi +50% hingga multibagger berbasis katalis akuisisi/backdoor, rights issue injeksi aset, dan pertumbuhan EPS.",
+      katalis_berita_terdeteksi: [],
+      daftar_investment: []
+    };
+
     let newsState = {
       macro_quotes: [],
       risk_score: 3,
@@ -896,7 +975,6 @@
     }
 
     function catatClientError(modul, pesan, detail = "") {
-      // Abaikan error jaringan/izin yang muncul saat sesi sudah kosong atau sedang proses logout
       if (isLoggingOut || !currentUser || !firebase.apps.length || !firebase.auth().currentUser) {
         return;
       }
@@ -916,7 +994,6 @@
       if (isAdminUser) renderAdminMonitor();
     }
 
-    // MATIKAN SELURUH LISTENER FIREBASE SECARA BERSIH SEBELUM LOGOUT / GANTI AKUN
     function matikanRealtimeDatabaseListeners() {
       if (activeUserRef) {
         try { activeUserRef.off(); } catch (_) {}
@@ -927,6 +1004,7 @@
         [
           "bpjs_signals",
           "scalping_signals",
+          "investment_signals",
           "bpjs_history",
           "bpjs_news",
           "bpjs_meta",
@@ -939,7 +1017,6 @@
       listenersStarted = false;
     }
 
-    // DETEKSI MODE PWA STANDALONE (ANTI-BUG TOMBOL DOWNLOAD SAAT SUDAH TERPASANG)
     function isStandalonePWA() {
       return (
         window.matchMedia("(display-mode: standalone)").matches ||
@@ -1063,16 +1140,19 @@
       document.getElementById("clock-wib").textContent = `${String(wib.getHours()).padStart(2, "0")}:${String(wib.getMinutes()).padStart(2, "0")} WIB`;
     }
 
-    // FILTER HARGA TERPUSAT (SINKRON BPJS & SCALPING)
+    // FILTER HARGA TERPUSAT (SINKRON BPJS, SCALPING & INVESTMENT)
     function setFilterHarga(nominal) {
       maxHargaFilter = Number(nominal) || 0;
       const inBpjs = document.getElementById("input-max-harga-bpjs");
       const inScalp = document.getElementById("input-max-harga-scalp");
+      const inInv = document.getElementById("input-max-harga-inv");
       if (inBpjs) inBpjs.value = maxHargaFilter > 0 ? maxHargaFilter : "";
       if (inScalp) inScalp.value = maxHargaFilter > 0 ? maxHargaFilter : "";
+      if (inInv) inInv.value = maxHargaFilter > 0 ? maxHargaFilter : "";
       perbaruiTampilanFilterHarga();
       renderKartu();
       renderScalping();
+      renderInvestment();
     }
 
     function onInputMaxHarga(val) {
@@ -1080,11 +1160,14 @@
       maxHargaFilter = num > 0 ? num : 0;
       const inBpjs = document.getElementById("input-max-harga-bpjs");
       const inScalp = document.getElementById("input-max-harga-scalp");
+      const inInv = document.getElementById("input-max-harga-inv");
       if (inBpjs && Number(inBpjs.value) !== maxHargaFilter) inBpjs.value = maxHargaFilter > 0 ? maxHargaFilter : "";
       if (inScalp && Number(inScalp.value) !== maxHargaFilter) inScalp.value = maxHargaFilter > 0 ? maxHargaFilter : "";
+      if (inInv && Number(inInv.value) !== maxHargaFilter) inInv.value = maxHargaFilter > 0 ? maxHargaFilter : "";
       perbaruiTampilanFilterHarga();
       renderKartu();
       renderScalping();
+      renderInvestment();
     }
 
     function perbaruiTampilanFilterHarga() {
@@ -1232,7 +1315,6 @@
           return;
         }
 
-        // Jika berganti akun Google pada browser yang sama, bersihkan listener & memori sesi lama
         if (lastLoggedUid && lastLoggedUid !== user.uid) {
           matikanRealtimeDatabaseListeners();
           clientRuntimeErrors = [];
@@ -1404,7 +1486,21 @@
         catatClientError("SCALPING", "Gagal membaca node scalping_signals", err.message);
       });
 
-      // 3. Riwayat Sinyal (History TP/SL)
+      // 3. Investment (+50% – Multibagger)
+      db.ref("investment_signals").on("value", (snap) => {
+        if (isLoggingOut || !currentUser) return;
+        const data = snap.val();
+        if (data) {
+          investmentState = data;
+        }
+        renderInvestment();
+        if (isAdminUser) renderAdminMonitor();
+      }, (err) => {
+        if (isLoggingOut || !currentUser || !firebase.auth().currentUser) return;
+        catatClientError("INVESTMENT", "Gagal membaca node investment_signals", err.message);
+      });
+
+      // 4. Riwayat Sinyal (History TP/SL)
       db.ref("bpjs_history").on("value", (snap) => {
         if (isLoggingOut || !currentUser) return;
         historyRawData = snap.val();
@@ -1416,7 +1512,7 @@
         catatClientError("BPJS", "Gagal membaca node bpjs_history", err.message);
       });
 
-      // 4. Berita Valid & Makro Global
+      // 5. Berita Valid & Makro Global
       db.ref("bpjs_news").on("value", (snap) => {
         if (isLoggingOut || !currentUser) return;
         const data = snap.val();
@@ -1425,6 +1521,7 @@
           perbaruiTampilanBeritaDanMakro();
           perbaruiTampilanSinyal();
           renderScalping();
+          renderInvestment();
           if (isAdminUser) renderAdminMonitor();
         }
       }, (err) => {
@@ -1432,7 +1529,7 @@
         catatClientError("NEWS", "Gagal membaca node bpjs_news", err.message);
       });
 
-      // 5. ADMIN ONLY: Metadata Kuota API, Whitelist Pengguna & Log Error Server
+      // 6. ADMIN ONLY: Metadata Kuota API, Whitelist Pengguna & Log Error Server
       if (isAdminUser) {
         db.ref("bpjs_meta").on("value", (snap) => {
           if (isLoggingOut || !currentUser || !isAdminUser) return;
@@ -1577,7 +1674,6 @@
       const hardErrorCount = allErrors.filter(e => e.level === "ERROR").length;
       const warnCount = allErrors.filter(e => e.level === "WARNING").length;
 
-      // Update badge pada tab Admin Monitor
       const badgeTab = document.getElementById("badge-admin-err");
       if (badgeTab) {
         if (hardErrorCount > 0) {
@@ -1592,7 +1688,6 @@
         }
       }
 
-      // Data metrik tiap modul
       const bpjsSignals = Array.isArray(appState.daftar_sinyal) ? appState.daftar_sinyal : [];
       const bpjsFunnel = Array.isArray(appState.funnel_tahap1) ? appState.funnel_tahap1 : [];
       const bpjsValidCount = bpjsSignals.filter(s => s.sinyal === "VALID BPJS").length;
@@ -1628,7 +1723,8 @@
         ? "text-emerald-400 bg-emerald-500/15 border-emerald-500/40"
         : "text-amber-300 bg-amber-500/15 border-amber-500/40";
 
-      // 1. Render 4 Kartu Kesehatan Modul
+      const invList = Array.isArray(investmentState.daftar_investment) ? investmentState.daftar_investment : [];
+
       const healthEl = document.getElementById("admin-health-cards");
       if (healthEl) {
         healthEl.innerHTML = `
@@ -1652,10 +1748,10 @@
 
           <div class="bg-surface border border-stroke rounded-2xl p-4 space-y-2 shadow-sm">
             <div class="flex items-center justify-between gap-2">
-              <span class="text-xs font-extrabold text-white">3. Berita & Makro</span>
+              <span class="text-xs font-extrabold text-white">3. Berita & Investment</span>
               <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${newsStatusColor}">${newsStatus}</span>
             </div>
-            <p class="text-[11px] font-mono text-slate-300">Artikel: <strong class="text-white">${newsList.length}</strong> • Foto: <strong class="text-emerald-400">${newsWithImg}/${newsList.length}</strong></p>
+            <p class="text-[11px] font-mono text-slate-300">Berita: <strong class="text-white">${newsList.length}</strong> • Inv (+50%): <strong class="text-emerald-400">${invList.length}</strong></p>
             <p class="text-[10px] font-mono text-slate-400">Sync: ${newsSyncStr}</p>
           </div>
 
@@ -1669,7 +1765,6 @@
           </div>`;
       }
 
-      // 2. Render Transparansi Kerja BPJS
       const bpjsPanel = document.getElementById("admin-bpjs-transparency");
       if (bpjsPanel) {
         const terpilihTickers = bpjsFunnel.filter(x => x.dipilih_ai).map(x => x.ticker);
@@ -1725,7 +1820,6 @@
           </div>`;
       }
 
-      // 3. Render Transparansi Kerja Radar Scalping & Berita
       const scalpNewsPanel = document.getElementById("admin-scalp-news-transparency");
       if (scalpNewsPanel) {
         const hotCount = scalpList.filter(s => s.status_scalp === "HOT BREAKOUT").length;
@@ -1742,8 +1836,8 @@
         scalpNewsPanel.innerHTML = `
           <div class="flex items-center justify-between gap-2 border-b border-stroke pb-3">
             <div>
-              <h3 class="text-sm font-extrabold text-white">Transparansi Scalping & Berita</h3>
-              <p class="text-[11px] text-slate-400">Detak kerja pemindai intraday & kurasi berita makro</p>
+              <h3 class="text-sm font-extrabold text-white">Transparansi Scalping, Investment & Berita</h3>
+              <p class="text-[11px] text-slate-400">Detak kerja pemindai intraday, katalis multibagger, & kurasi berita</p>
             </div>
             <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-elevated text-emerald-400 border border-stroke">${scalpState.tanggal || "-"}</span>
           </div>
@@ -1761,6 +1855,10 @@
               <div class="flex items-center justify-between text-[11px]">
                 <span class="text-slate-400">Posisi di Atas VWAP</span>
                 <strong class="text-emerald-400">${aboveVwapCount} / ${scalpList.length} emiten</strong>
+              </div>
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="text-slate-400">Kandidat Investment (+50%)</span>
+                <strong class="text-sky-400">${invList.length} emiten (${invList.map(x => x.ticker).join(", ") || "-"})</strong>
               </div>
               ${telScalp.scanned_total ? `
                 <div class="flex items-center justify-between text-[11px]">
@@ -1786,7 +1884,6 @@
           </div>`;
       }
 
-      // 4. Render Daftar Error
       const levelFilter = document.getElementById("filter-admin-error-level")?.value || "ALL";
       const filteredErrors = allErrors.filter(e => levelFilter === "ALL" || e.level === levelFilter);
 
@@ -1802,7 +1899,7 @@
         errContainer.innerHTML = `
           <div class="bg-canvas border border-emerald-500/30 rounded-xl p-6 text-center space-y-1">
             <p class="text-xs font-extrabold text-emerald-400">✓ Tidak Ada Error Sistem Tercatat</p>
-            <p class="text-[11px] text-slate-400">Seluruh jalur penarikan data BPJS, Radar Scalping, Berita, dan Firebase berjalan normal.</p>
+            <p class="text-[11px] text-slate-400">Seluruh jalur penarikan data BPJS, Radar Scalping, Investment, Berita, dan Firebase berjalan normal.</p>
           </div>`;
         return;
       }
@@ -1825,6 +1922,221 @@
             ${err.detail ? `<p class="text-[11px] font-mono text-slate-400 bg-surface border border-stroke rounded-lg px-2.5 py-1.5 break-all">${escapeHtmlAttr(err.detail)}</p>` : ""}
           </div>`;
       }).join("");
+    }
+
+    // RENDER MODUL INVESTMENT (+50% – MULTIBAGGER)
+    function renderInvestment() {
+      const container = document.getElementById("container-investment");
+      const badgeEl = document.getElementById("badge-investment");
+      const tglEl = document.getElementById("inv-tanggal-bursa");
+      const regimeEl = document.getElementById("inv-regime-badge");
+      const stratEl = document.getElementById("inv-ringkasan-strategi");
+      const katalisBox = document.getElementById("box-katalis-korporasi");
+      if (!container) return;
+
+      const listRaw = Array.isArray(investmentState.daftar_investment) ? investmentState.daftar_investment : [];
+      if (badgeEl) badgeEl.textContent = String(listRaw.length);
+
+      if (tglEl) {
+        const jamInv = formatWaktuWIB(investmentState.updated_at);
+        tglEl.textContent = investmentState.tanggal_bursa && investmentState.tanggal_bursa !== "-"
+          ? `Acuan: ${investmentState.tanggal_bursa} • ${jamInv}`
+          : "Acuan: -";
+      }
+
+      if (regimeEl) {
+        const reg = investmentState.macro_regime || newsState.regime || "NORMAL";
+        const rScore = investmentState.macro_risk_score || newsState.risk_score || 3;
+        regimeEl.textContent = `${reg} • RISK ${rScore}/10`;
+        regimeEl.className = (investmentState.shock_halt || newsState.shock_halt)
+          ? "self-start sm:self-center px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold bg-rose-500/15 text-rose-400 border border-rose-500/40 shrink-0"
+          : "self-start sm:self-center px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold bg-elevated text-emerald-400 border border-stroke shrink-0";
+      }
+
+      if (stratEl) {
+        stratEl.textContent = investmentState.ringkasan_strategi || "Seleksi saham berpotensi +50% hingga multibagger berbasis katalis akuisisi/backdoor, rights issue injeksi aset, dan pertumbuhan EPS.";
+      }
+
+      const pilarFilter = document.getElementById("filter-inv-pilar")?.value || "ALL";
+      const statusFilter = document.getElementById("filter-inv-status")?.value || "ALL";
+
+      const filtered = listRaw.filter(item => {
+        const harga = Number(item.harga_close || 0);
+        const matchHarga = maxHargaFilter === 0 || (harga > 0 && harga <= maxHargaFilter);
+        const matchPilar = pilarFilter === "ALL" || String(item.pilar_utama || "").toUpperCase() === pilarFilter;
+        const matchStatus = statusFilter === "ALL" || String(item.status_kelayakan || "").toUpperCase() === statusFilter;
+        return matchHarga && matchPilar && matchStatus;
+      });
+
+      const countEl = document.getElementById("count-investment-list");
+      if (countEl) countEl.textContent = `${filtered.length} emiten`;
+
+      if (investmentState.shock_halt || newsState.shock_halt) {
+        container.innerHTML = `
+          <div class="md:col-span-2 bg-surface border border-rose-500/40 rounded-2xl p-8 text-center space-y-2 shadow-sm">
+            <span class="inline-block px-2.5 py-1 rounded-lg bg-rose-500/15 text-rose-400 border border-rose-500/30 text-[10px] font-mono font-bold">AKUMULASI DITAHAN — MACRO RISK GUARD</span>
+            <p class="text-sm font-bold text-white">Rencana Akumulasi Jangka Menengah Ditunda Sementara</p>
+            <p class="text-xs text-slate-400 max-w-lg mx-auto">${newsState.ringkasan_makro || "Terdeteksi volatilitas atau tekanan makro yang memerlukan kehati-hatian ekstra."}</p>
+          </div>`;
+      } else if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="md:col-span-2 bg-surface border border-stroke rounded-2xl p-10 text-center space-y-2 shadow-sm">
+            <p class="text-sm font-bold text-slate-200">
+              ${maxHargaFilter > 0 ? `Tidak Ada Kandidat Investment dengan Harga ≤ ${formatIdr(maxHargaFilter)}` : "Belum Ada Kandidat Investment (+50% / Multibagger)"}
+            </p>
+            <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+              Modul memindai katalis akuisisi/backdoor, rights issue injeksi aset, dan pertumbuhan EPS positif. Ubah filter pilar/harga atau tunggu pembaruan jadwal berikutnya.
+            </p>
+          </div>`;
+      } else {
+        container.innerHTML = filtered.map(item => {
+          const isHigh = String(item.status_kelayakan || "").toUpperCase().includes("HIGH");
+          const badgeKelayakan = isHigh
+            ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/40"
+            : "bg-sky-500/15 text-sky-400 border-sky-500/40";
+
+          const ret1mStr = typeof item.ret_1m_pct === "number"
+            ? `<span class="${item.ret_1m_pct >= 0 ? 'text-emerald-400' : 'text-rose-400'} font-bold">${item.ret_1m_pct >= 0 ? '+' : ''}${item.ret_1m_pct}%</span>`
+            : `<span class="text-slate-400">-</span>`;
+          const ret3mStr = typeof item.ret_3m_pct === "number"
+            ? `<span class="${item.ret_3m_pct >= 0 ? 'text-emerald-400' : 'text-rose-400'} font-bold">${item.ret_3m_pct >= 0 ? '+' : ''}${item.ret_3m_pct}%</span>`
+            : `<span class="text-slate-400">-</span>`;
+
+          return `
+            <article class="bg-surface border ${isHigh ? 'border-emerald-500/40' : 'border-stroke'} rounded-2xl p-4 sm:p-5 space-y-4 shadow-md animate-card flex flex-col justify-between">
+              <div class="space-y-4">
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <h3 class="text-2xl font-extrabold font-mono text-white tracking-tight">${item.ticker}</h3>
+                      <span class="px-2 py-0.5 rounded bg-emerald-500 text-canvas text-[10px] font-mono font-extrabold">SKOR ${item.skor_multibagger || 75}/100</span>
+                      <span class="px-2 py-0.5 rounded bg-elevated border border-stroke text-[10px] font-mono font-semibold text-amber-300">${escapeHtmlAttr(item.label_pilar || "Katalis Korporasi")}</span>
+                    </div>
+                    <p class="text-[10px] font-mono text-slate-400 mt-1.5">
+                      Call: <strong class="text-white">${item.tanggal_call || investmentState.tanggal_bursa || "-"}</strong> • ${item.jam_call || "-"} • Horizon: <strong class="text-sky-400">${escapeHtmlAttr(item.horizon_estimasi || "2 - 6 Bulan")}</strong>
+                    </p>
+                  </div>
+                  <span class="px-2.5 py-1 text-[10px] font-mono font-bold rounded-lg border shrink-0 ${badgeKelayakan}">${escapeHtmlAttr(item.status_kelayakan || "ACCUMULATE WATCH")}</span>
+                </div>
+
+                <!-- Metrik Harga & Kinerja Menengah -->
+                <div class="grid grid-cols-3 gap-2 text-xs font-mono">
+                  <div class="bg-canvas border border-stroke rounded-xl p-2.5">
+                    <span class="text-[10px] text-slate-400 block">Harga Acuan</span>
+                    <strong class="text-white text-sm block mt-0.5">${formatIdr(item.harga_close)}</strong>
+                    <span class="text-[10px] ${Number(item.persen_naik || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${Number(item.persen_naik || 0) >= 0 ? '+' : ''}${item.persen_naik || 0}% • Val ${item.nilai_transaksi_miliar || 0}M</span>
+                  </div>
+                  <div class="bg-canvas border border-stroke rounded-xl p-2.5">
+                    <span class="text-[10px] text-slate-400 block">Tren 1B / 3B</span>
+                    <span class="text-xs block mt-1">1B: ${ret1mStr}</span>
+                    <span class="text-xs block mt-0.5">3B: ${ret3mStr}</span>
+                  </div>
+                  <div class="bg-canvas border border-stroke rounded-xl p-2.5">
+                    <span class="text-[10px] text-slate-400 block">Status EPS</span>
+                    <strong class="text-emerald-300 text-[11px] leading-snug block mt-1">${escapeHtmlAttr(item.eps_status || "Pantau EPS")}</strong>
+                    ${typeof item.per_ttm === "number" ? `<span class="text-[10px] text-slate-400">PER: ${item.per_ttm}x</span>` : ""}
+                  </div>
+                </div>
+
+                <!-- Rencana Akumulasi Bertahap & Target +25% / +50% / Multibagger -->
+                <div class="bg-canvas border border-stroke rounded-xl p-3 space-y-2.5">
+                  <div class="flex items-center justify-between text-[11px] font-mono">
+                    <span class="text-slate-400 font-bold uppercase">Rencana Akumulasi Bertahap:</span>
+                    <strong class="text-amber-300">${formatIdr(item.area_akumulasi_min)} – ${formatIdr(item.area_akumulasi_max)}</strong>
+                  </div>
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+                    <div class="bg-surface border border-stroke rounded-lg p-2">
+                      <span class="text-[9px] text-slate-400 block">Target +25%</span>
+                      <strong class="text-emerald-300 text-xs">${formatIdr(item.target_tp_25)}</strong>
+                    </div>
+                    <div class="bg-surface border border-emerald-500/30 rounded-lg p-2">
+                      <span class="text-[9px] text-emerald-400 block">Target +50%</span>
+                      <strong class="text-emerald-400 text-xs">${formatIdr(item.target_tp_50)}</strong>
+                    </div>
+                    <div class="bg-surface border border-sky-500/30 rounded-lg p-2">
+                      <span class="text-[9px] text-sky-400 block">Multibagger</span>
+                      <strong class="text-sky-400 text-xs">${formatIdr(item.target_multibagger)}</strong>
+                    </div>
+                    <div class="bg-surface border border-rose-500/30 rounded-lg p-2">
+                      <span class="text-[9px] text-rose-400 block">Batas Invalidasi</span>
+                      <strong class="text-rose-400 text-xs">${formatIdr(item.batas_invalidasi_sl)}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Katalis Korporasi & Risiko Utama -->
+                <div class="bg-elevated border-l-2 border-emerald-400 px-3.5 py-3 rounded-r-xl space-y-1.5">
+                  <div>
+                    <span class="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-bold block">Katalis Korporasi & Fundamental</span>
+                    <p class="text-xs text-slate-200 leading-relaxed">${item.katalis_korporasi || "-"}</p>
+                  </div>
+                  <div class="pt-1 border-t border-stroke/60">
+                    <span class="text-[10px] font-mono uppercase tracking-wider text-amber-300 font-bold block">Risiko Utama</span>
+                    <p class="text-[11px] text-slate-300 leading-relaxed">${item.risiko_utama || "-"}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-stroke text-xs">
+                <button onclick="salinPlanInvestment('${item.ticker}')" class="bg-elevated hover:bg-stroke border border-stroke text-slate-200 font-semibold px-3.5 py-1.5 rounded-xl transition">
+                  Salin Plan Investment
+                </button>
+                <div class="flex items-center gap-2.5 font-mono text-[11px]">
+                  <a href="https://www.tradingview.com/chart/?symbol=IDX:${item.ticker}" target="_blank" rel="noopener" class="text-sky-400 hover:underline">TradingView ↗</a>
+                  <span class="text-slate-700">|</span>
+                  <a href="https://stockbit.com/symbol/${item.ticker}" target="_blank" rel="noopener" class="text-emerald-400 hover:underline">Stockbit ↗</a>
+                </div>
+              </div>
+            </article>`;
+        }).join("");
+      }
+
+      if (katalisBox) {
+        const newsCorp = Array.isArray(investmentState.katalis_berita_terdeteksi) ? investmentState.katalis_berita_terdeteksi : [];
+        katalisBox.innerHTML = `
+          <div class="flex items-center justify-between gap-2 border-b border-stroke pb-2.5">
+            <div>
+              <h3 class="text-xs sm:text-sm font-extrabold text-white">Radar Berita Katalis Korporasi Terdeteksi</h3>
+              <p class="text-[11px] text-slate-400">Cuplikan berita terkait akuisisi, rights issue / injeksi aset, & pertumbuhan laba</p>
+            </div>
+            <span class="text-[10px] font-mono text-slate-400">${newsCorp.length} berita</span>
+          </div>
+          ${newsCorp.length === 0
+            ? `<p class="text-xs text-slate-400 py-2">Belum ada berita katalis korporasi khusus yang terdeteksi pada siklus terakhir.</p>`
+            : `<div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                ${newsCorp.map(n => `
+                  <div class="bg-canvas border border-stroke rounded-xl p-3 flex flex-col justify-between gap-2">
+                    <div>
+                      <p class="text-xs font-bold text-white leading-snug">${escapeHtmlAttr(n.judul || "-")}</p>
+                      <p class="text-[11px] text-slate-400 mt-1 line-clamp-2">${escapeHtmlAttr(n.desc || "")}</p>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-1 border-t border-stroke/60">
+                      <span>${escapeHtmlAttr(n.sumber || "Berita")} • ${escapeHtmlAttr(n.waktu || "")}</span>
+                      ${n.link ? `<a href="${escapeHtmlAttr(n.link)}" target="_blank" rel="noopener" class="text-sky-400 hover:underline">Sumber ↗</a>` : ""}
+                    </div>
+                  </div>`).join("")}
+              </div>`
+          }`;
+      }
+    }
+
+    function salinPlanInvestment(ticker) {
+      const item = (investmentState.daftar_investment || []).find(x => x.ticker === ticker);
+      if (!item) return;
+      const teks = [
+        `INVESTMENT (+50% / MULTIBAGGER) — call you (STAR GROUP)`,
+        `Tanggal Call: ${item.tanggal_call || investmentState.tanggal_bursa || '-'} (${item.jam_call || '-'})`,
+        `Emiten: ${item.ticker} [${item.status_kelayakan || 'ACCUMULATE WATCH'} • Skor ${item.skor_multibagger || 75}/100]`,
+        `Pilar Katalis: ${item.label_pilar || item.pilar_utama || '-'}`,
+        `Harga Acuan: ${formatIdr(item.harga_close)} | EPS: ${item.eps_status || '-'}`,
+        `Area Akumulasi Bertahap: ${formatIdr(item.area_akumulasi_min)} – ${formatIdr(item.area_akumulasi_max)}`,
+        `Target Bertahap: +25% (${formatIdr(item.target_tp_25)}) | +50% (${formatIdr(item.target_tp_50)}) | Multibagger (${formatIdr(item.target_multibagger)})`,
+        `Batas Invalidasi / SL: ${formatIdr(item.batas_invalidasi_sl)} | Horizon: ${item.horizon_estimasi || '2 - 6 Bulan'}`,
+        `Katalis: ${item.katalis_korporasi || '-'}`,
+        `Risiko: ${item.risiko_utama || '-'}`
+      ].join("\n");
+      navigator.clipboard.writeText(teks);
+      showToast(`Plan Investment ${ticker} disalin.`, "ok");
     }
 
     function buatBannerFallbackBerita(isShock, isPos, sumberText, hiddenAwal = false) {
@@ -2454,7 +2766,7 @@
 
     function gantiMenu(tab) {
       if (tab === "admin" && !isAdminUser) return;
-      ["sinyal", "scalping", "history", "berita", "funnel", "admin"].forEach(t => {
+      ["sinyal", "scalping", "investment", "history", "berita", "funnel", "admin"].forEach(t => {
         const viewEl = document.getElementById(`view-${t}`);
         if (!viewEl) return;
         viewEl.classList.toggle("hidden", t !== tab);
@@ -2465,11 +2777,12 @@
           btn.classList.add("hidden");
           return;
         }
-        const extraFlex = (t === "scalping" || t === "admin") ? " inline-flex items-center gap-1.5" : "";
+        const extraFlex = (t === "scalping" || t === "investment" || t === "admin") ? " inline-flex items-center gap-1.5" : "";
         btn.className = t === tab
           ? `nav-tab border-b-2 border-emerald-400 text-emerald-400 text-xs font-bold px-3.5 py-2.5 whitespace-nowrap${extraFlex}`
           : `nav-tab border-b-2 border-transparent text-slate-400 hover:text-slate-200 text-xs font-semibold px-3.5 py-2.5 whitespace-nowrap${extraFlex}`;
       });
+      if (tab === "investment") renderInvestment();
       if (tab === "admin" && isAdminUser) renderAdminMonitor();
     }
 
