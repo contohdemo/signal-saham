@@ -50,7 +50,6 @@
         timestamp: Date.now()
       });
 
-      // Jaga ukuran log maksimal 40 entri terbaru
       const allErr = await fetch(`${DB}/bpjs_errors.json?shallow=true`).then(r => r.json()).catch(() => null);
       if (allErr && typeof allErr === "object") {
         const keys = Object.keys(allErr).sort();
@@ -156,10 +155,15 @@
       if (/halt|anjlok|ambruk|krisis|resesi|perang|outflow besar|guncangan|turun tajam|melemah tajam/.test(text)) {
         return "GUNCANGAN";
       }
-      if (/menguat|melesat|borong|inflow|net buy|laba naik|dividen|rekor|surplus|melompat|bangkit|positif|tumbuh/.test(text)) {
+      if (/menguat|melesat|borong|inflow|net buy|laba naik|dividen|rekor|surplus|melompat|bangkit|positif|tumbuh|akuisisi|rights issue|hmetd|injeksi aset/.test(text)) {
         return "POSITIF";
       }
       return "NETRAL";
+    }
+
+    function isCorporateCatalystNews(title, desc = "") {
+      const text = `${title} ${desc}`.toLowerCase();
+      return /akuisisi|diakuisisi|pengendali|backdoor|rights issue|hmetd|private placement|injeksi aset|setoran modal|ekspansi|merger|restrukturisasi|laba bersih|eps/.test(text);
     }
 
     async function fetchOgImage(articleUrl) {
@@ -218,6 +222,16 @@
       return "";
     }
 
+    function bulatkanFraksiBEI(harga) {
+      const h = Math.round(harga);
+      let f = 1;
+      if (h >= 5000) f = 25;
+      else if (h >= 2000) f = 10;
+      else if (h >= 500) f = 5;
+      else if (h >= 200) f = 2;
+      return Math.max(1, Math.round(h / f) * f);
+    }
+
     const wibNow = getWIB();
     const todayStr = wibNow.toISOString().slice(0, 10);
     const hariIni = wibNow.getDay();
@@ -229,7 +243,7 @@
     const targetEod = getTglBursa(0);
 
     const sudahScanEodIni = metaOld.last_ia_eod === targetEod && (metaOld.ia_used_today || 0) > 0;
-    const isFullRun = inputMode === "full" || (isWeekday && wibNow.getHours() === 8 && !sudahScanEodIni && inputMode === "auto");
+    const isFullRun = inputMode === "full" || inputMode === "investment" || (isWeekday && wibNow.getHours() === 8 && !sudahScanEodIni && inputMode === "auto");
 
     let groqCallsToday = metaOld.quota_date === todayStr ? (metaOld.groq_calls_today || 0) : 0;
     let iaUsedToday = metaOld.quota_date === todayStr ? (metaOld.ia_used_today || 0) : 0;
@@ -301,14 +315,16 @@
     }
     console.log(`Makro quotes berhasil dimuat: ${macroQuotes.length}/${macroSymbols.length}`);
 
-    // 2. BING NEWS RSS (BERGAMBAR) + RSS MEDIA LOKAL + GOOGLE NEWS RSS
+    // 2. BING NEWS RSS (BERGAMBAR) + RSS MEDIA LOKAL + GOOGLE NEWS RSS (TERMASUK KATALIS KORPORASI)
     const rssUrls = [
       { url: "https://www.bing.com/news/search?q=IHSG+saham+BEI&setlang=id&cc=ID&format=rss", sumber: "Berita Pasar" },
       { url: "https://www.bing.com/news/search?q=ekonomi+Indonesia+Bank+Indonesia+rupiah&setlang=id&cc=ID&format=rss", sumber: "Ekonomi RI" },
+      { url: "https://www.bing.com/news/search?q=akuisisi+rights+issue+saham+BEI&setlang=id&cc=ID&format=rss", sumber: "Aksi Korporasi" },
       { url: "https://www.cnbcindonesia.com/market/rss", sumber: "CNBC Indonesia" },
       { url: "https://investasi.kontan.co.id/rss", sumber: "Kontan Investasi" },
       { url: "https://www.antaranews.com/rss/ekonomi.xml", sumber: "ANTARA Ekonomi" },
-      { url: "https://news.google.com/rss/search?q=IHSG+OR+saham+OR+BEI+when:2d&hl=id&gl=ID&ceid=ID:id", sumber: "Google News Saham" }
+      { url: "https://news.google.com/rss/search?q=IHSG+OR+saham+OR+BEI+when:2d&hl=id&gl=ID&ceid=ID:id", sumber: "Google News Saham" },
+      { url: "https://news.google.com/rss/search?q=(akuisisi+OR+rights+issue+OR+backdoor+OR+laba+bersih)+saham+BEI+when:7d&hl=id&gl=ID&ceid=ID:id", sumber: "Google News Korporasi" }
     ];
 
     let rawNews = [];
@@ -327,7 +343,7 @@
         const items = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
         let validCount = 0;
 
-        for (const item of items.slice(0, 5)) {
+        for (const item of items.slice(0, 6)) {
           const rawTitle = item.match(/<title>([\s\S]*?)<\/title>/i)?.[1] || "";
           const rawLink = item.match(/<link>([\s\S]*?)<\/link>/i)?.[1] || "";
           const pubDate = (item.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1] || "").trim();
@@ -354,7 +370,8 @@
               waktu: formatPubDateWIB(pubDate),
               sumber: sourceTag || feed.sumber,
               image: rssImage,
-              desc: descText
+              desc: descText,
+              isCorporateCatalyst: isCorporateCatalystNews(title, descText)
             });
           }
         }
@@ -367,7 +384,7 @@
       }
     }
 
-    if (failedRssFeeds.length >= 3) {
+    if (failedRssFeeds.length >= 4) {
       await logSystemError(
         "WARNING",
         "NEWS",
@@ -379,15 +396,18 @@
     rawNews.sort((a, b) => (Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0));
 
     const seenTitles = new Set();
-    rawNews = rawNews.filter(n => {
+    const dedupedNews = rawNews.filter(n => {
       const key = n.title.toLowerCase().slice(0, 45);
       if (seenTitles.has(key)) return false;
       seenTitles.add(key);
       return true;
-    }).slice(0, 12);
+    });
 
-    rawNews = await Promise.all(
-      rawNews.map(async (item, idx) => {
+    const corporateNewsPool = dedupedNews.filter(n => n.isCorporateCatalyst).slice(0, 10);
+    const curatedNewsBase = dedupedNews.slice(0, 12);
+
+    const enrichedNews = await Promise.all(
+      curatedNewsBase.map(async (item, idx) => {
         let img = item.image || "";
         if (!img) img = await fetchOgImage(item.link);
         if (!img) img = await findBingNewsThumbnail(item.title);
@@ -395,14 +415,14 @@
       })
     );
 
-    rawNews.sort((a, b) => {
+    enrichedNews.sort((a, b) => {
       const imgDiff = (b.image ? 1 : 0) - (a.image ? 1 : 0);
       if (imgDiff !== 0) return imgDiff;
       return (Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0);
     });
-    rawNews = rawNews.map((item, idx) => ({ ...item, id: idx }));
+    const finalRawNews = enrichedNews.map((item, idx) => ({ ...item, id: idx }));
 
-    console.log(`Total berita RSS terkumpul: ${rawNews.length} artikel | Dengan foto: ${rawNews.filter(x => x.image).length} artikel.`);
+    console.log(`Total berita RSS terkumpul: ${finalRawNews.length} artikel | Katalis korporasi: ${corporateNewsPool.length} | Dengan foto: ${finalRawNews.filter(x => x.image).length} artikel.`);
 
     async function getGroqModels() {
       const modelsRes = await fetch("https://api.groq.com/openai/v1/models", {
@@ -466,11 +486,11 @@
     let modelList = null;
     let macroResult = newsOld;
     let newsAiMode = "RSS Auto Fallback";
-    const currentHash = rawNews.map(n => n.title.slice(0, 30)).join("|");
+    const currentHash = finalRawNews.map(n => n.title.slice(0, 30)).join("|");
 
-    if (rawNews.length > 0) {
+    if (finalRawNews.length > 0) {
       modelList = await getGroqModels();
-      const rawNewsForAI = rawNews.map(({ id, title, sumber, waktu, desc }) => ({ id, title, sumber, waktu, desc }));
+      const rawNewsForAI = finalRawNews.map(({ id, title, sumber, waktu, desc }) => ({ id, title, sumber, waktu, desc }));
 
       const parsedM = await callGroqJSON(
         modelList,
@@ -501,9 +521,9 @@ Balas HANYA JSON murni:
         newsAiMode = "Groq AI + RSS";
         finalBerita = parsedM.berita_valid.slice(0, 6).map((item, i) => {
           const matched =
-            (typeof item.raw_id === "number" ? rawNews.find(r => r.id === item.raw_id) : null) ||
-            rawNews.find(r => r.title.toLowerCase().slice(0, 30) === String(item.judul || "").toLowerCase().slice(0, 30)) ||
-            rawNews[i];
+            (typeof item.raw_id === "number" ? finalRawNews.find(r => r.id === item.raw_id) : null) ||
+            finalRawNews.find(r => r.title.toLowerCase().slice(0, 30) === String(item.judul || "").toLowerCase().slice(0, 30)) ||
+            finalRawNews[i];
 
           return {
             judul: item.judul || matched?.title || "",
@@ -517,7 +537,7 @@ Balas HANYA JSON murni:
         });
       } else {
         console.log("Menggunakan kurasi otomatis langsung dari RSS (tanpa AI).");
-        finalBerita = rawNews.slice(0, 6).map(r => ({
+        finalBerita = finalRawNews.slice(0, 6).map(r => ({
           judul: r.title,
           sumber: r.sumber,
           dampak: classifyNewsSentiment(r.title, r.desc),
@@ -581,7 +601,7 @@ Balas HANYA JSON murni:
 
         const dateKeys = Object.keys(histObj).sort().slice(-7);
         for (const callDate of dateKeys) {
-          if (callDate >= todayStr) continue; // Evaluasi hanya untuk call hari bursa sebelumnya
+          if (callDate >= todayStr) continue;
           const entry = histObj[callDate];
           if (!entry || !Array.isArray(entry.daftar_sinyal)) continue;
 
@@ -637,6 +657,221 @@ Balas HANYA JSON murni:
 
     await evaluateHistoryTpSl();
 
+    // 4. MODUL INVESTMENT (TARGET +50% – MULTIBAGGER: AKUISISI / BACKDOOR, RIGHTS ISSUE / INJEKSI ASET, PERTUMBUHAN EPS)
+    async function runInvestmentMultibaggerScan() {
+      try {
+        if (!modelList) modelList = await getGroqModels();
+
+        // Cari kandidat emiten likuid + data EPS (jika tersedia di TradingView scanner)
+        const baseCols = ["name", "close", "change", "Value.Traded", "relative_volume_10d_calc"];
+        const epsCols = ["basic_eps_ttm", "earnings_per_share_diluted_ttm", "price_earnings_ttm"];
+
+        async function fetchTvInvestmentCandidates(useEpsCols) {
+          const cols = useEpsCols ? [...baseCols, ...epsCols] : baseCols;
+          const res = await fetch("https://scanner.tradingview.com/indonesia/scan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...BROWSER_HEADERS },
+            body: JSON.stringify({
+              filter: [
+                { left: "Value.Traded", operation: "in_range", right: [5000000000, 1000000000000] },
+                { left: "close", operation: "in_range", right: [50, 20000] }
+              ],
+              symbols: { query: { types: ["stock"] }, tickers: [] },
+              columns: cols,
+              sort: { sortBy: "Value.Traded", sortOrder: "desc" },
+              range: [0, 35]
+            })
+          }).then(r => r.json()).catch(() => null);
+
+          if (!res || !Array.isArray(res.data) || res.data.length === 0) return null;
+          return res.data.map(r => {
+            const d = r.d || [];
+            const epsBasic = useEpsCols && typeof d[5] === "number" ? Number(d[5].toFixed(2)) : null;
+            const epsDiluted = useEpsCols && typeof d[6] === "number" ? Number(d[6].toFixed(2)) : null;
+            const perTtm = useEpsCols && typeof d[7] === "number" ? Number(d[7].toFixed(2)) : null;
+            const epsVal = epsBasic !== null ? epsBasic : epsDiluted;
+            return {
+              ticker: d[0],
+              harga_close: Math.round(d[1] || 0),
+              persen_naik: Number((d[2] || 0).toFixed(2)),
+              nilai_transaksi_miliar: Number(((d[3] || 0) / 1e9).toFixed(2)),
+              lonjakan_volume: Number((d[4] || 1).toFixed(2)),
+              eps_ttm: epsVal,
+              per_ttm: perTtm
+            };
+          });
+        }
+
+        let tvCandidates = await fetchTvInvestmentCandidates(true);
+        if (!tvCandidates) {
+          tvCandidates = await fetchTvInvestmentCandidates(false);
+        }
+        tvCandidates = (tvCandidates || []).filter(c => c.ticker && c.harga_close > 0);
+
+        if (tvCandidates.length === 0) {
+          await logSystemError(
+            "WARNING",
+            "INVESTMENT",
+            "Scanner kandidat Investment tidak mengembalikan data emiten",
+            "Periksa akses scanner.tradingview.com pada modul Investment."
+          );
+          return;
+        }
+
+        // Ambil tren harga 1 bulan / 3 bulan dari Yahoo Finance untuk top 12 kandidat agar ada konteks struktur akumulasi menengah
+        const enrichedCandidates = [];
+        for (const cand of tvCandidates.slice(0, 12)) {
+          let ret1m = null;
+          let ret3m = null;
+          let low3m = null;
+          let high3m = null;
+          try {
+            const yUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(cand.ticker + ".JK")}?range=3mo&interval=1d`;
+            const yRes = await fetch(yUrl, { headers: { ...BROWSER_HEADERS, "Accept": "application/json" } }).then(r => r.json());
+            const r0 = yRes?.chart?.result?.[0];
+            const closes = (r0?.indicators?.quote?.[0]?.close || []).filter(v => typeof v === "number" && v > 0);
+            const lows = (r0?.indicators?.quote?.[0]?.low || []).filter(v => typeof v === "number" && v > 0);
+            const highs = (r0?.indicators?.quote?.[0]?.high || []).filter(v => typeof v === "number" && v > 0);
+            if (closes.length >= 2) {
+              const last = closes[closes.length - 1];
+              const idx1m = Math.max(0, closes.length - 22);
+              ret1m = Number((((last - closes[idx1m]) / closes[idx1m]) * 100).toFixed(2));
+              ret3m = Number((((last - closes[0]) / closes[0]) * 100).toFixed(2));
+              low3m = lows.length ? Math.round(Math.min(...lows)) : null;
+              high3m = highs.length ? Math.round(Math.max(...highs)) : null;
+            }
+          } catch (_) {}
+
+          enrichedCandidates.push({
+            ...cand,
+            ret_1m_pct: ret1m,
+            ret_3m_pct: ret3m,
+            support_3m: low3m,
+            resistance_3m: high3m
+          });
+        }
+
+        const corpNewsForAI = (corporateNewsPool.length > 0 ? corporateNewsPool : finalRawNews.slice(0, 8)).map(n => ({
+          judul: n.title,
+          sumber: n.sumber,
+          waktu: n.waktu,
+          desc: n.desc,
+          link: n.link
+        }));
+
+        await sleep(1000);
+        const aiInv = await callGroqJSON(
+          modelList,
+          `Kamu adalah Kepala Analis Ekuitas & Special Situation / Multibagger STAR GROUP untuk saham BEI (horizon mingguan hingga berbulan-bulan, target +50% s/d multibagger).
+Evaluasi kandidat emiten berdasarkan 3 PILAR UTAMA:
+1. Akuisisi / Backdoor Listing / Pengendali Baru bereputasi & membawa added value.
+2. Corporate Action (Rights Issue / HMETD / Private Placement) yang bertujuan INJEKSI ASET produktif (bukan sekadar tutup utang).
+3. Pertumbuhan EPS (Laba per Saham) positif/meningkat serta likuiditas wajar.
+
+Utamakan emiten yang memiliki katalis korporasi/EPS positif dan harga wajar untuk akumulasi bertahap. Pilih maksimal 4 emiten terbaik (atau 0-2 jika katalis lemah).
+Balas HANYA JSON murni:
+{
+  "ringkasan_strategi": "2 kalimat ringkas kondisi peluang multibagger & katalis korporasi saat ini",
+  "daftar_investment": [
+    {
+      "ticker": "KODE",
+      "pilar_utama": "AKUISISI_BACKDOOR | RIGHTS_ISSUE_INJEKSI_ASET | EPS_GROWTH_CATALYST",
+      "label_pilar": "label singkat pilar katalis",
+      "status_kelayakan": "HIGH CONVICTION | ACCUMULATE WATCH",
+      "skor_multibagger": 82,
+      "eps_status": "EPS POSITIF / BERTUMBUH atau EPS PERLU KONFIRMASI LAPKEU",
+      "katalis_korporasi": "penjelasan 1-2 kalimat soal akuisisi/backdoor/rights issue/injeksi aset & EPS",
+      "area_akumulasi_min": 0,
+      "area_akumulasi_max": 0,
+      "target_tp_25": 0,
+      "target_tp_50": 0,
+      "target_multibagger": 0,
+      "batas_invalidasi_sl": 0,
+      "horizon_estimasi": "1 - 3 Bulan atau 3 - 6 Bulan",
+      "risiko_utama": "risiko utama misal dilusi rights issue, batal akuisisi, atau volatilitas"
+    }
+  ]
+}`,
+          {
+            tanggal_bursa: targetEod,
+            macro_regime: macroResult.regime || "NORMAL",
+            macro_risk_score: macroResult.risk_score || 3,
+            corporate_news: corpNewsForAI,
+            candidates: enrichedCandidates
+          },
+          0.2
+        );
+
+        const candidateMap = new Map(enrichedCandidates.map(c => [c.ticker, c]));
+        const rawList = Array.isArray(aiInv?.daftar_investment) ? aiInv.daftar_investment : [];
+
+        const daftarInvestment = rawList
+          .filter(x => x && x.ticker && candidateMap.has(String(x.ticker).toUpperCase()))
+          .slice(0, 4)
+          .map(x => {
+            const tk = String(x.ticker).toUpperCase();
+            const base = candidateMap.get(tk);
+            const px = Number(base.harga_close || 0);
+            const accMax = Number(x.area_akumulasi_max) > 0 ? bulatkanFraksiBEI(x.area_akumulasi_max) : bulatkanFraksiBEI(px * 1.02);
+            const accMin = Number(x.area_akumulasi_min) > 0 ? bulatkanFraksiBEI(x.area_akumulasi_min) : bulatkanFraksiBEI(px * 0.93);
+            const tp25 = Number(x.target_tp_25) > 0 ? bulatkanFraksiBEI(x.target_tp_25) : bulatkanFraksiBEI(px * 1.25);
+            const tp50 = Number(x.target_tp_50) > 0 ? bulatkanFraksiBEI(x.target_tp_50) : bulatkanFraksiBEI(px * 1.50);
+            const tpMulti = Number(x.target_multibagger) > 0 ? bulatkanFraksiBEI(x.target_multibagger) : bulatkanFraksiBEI(px * 2.00);
+            const slInv = Number(x.batas_invalidasi_sl) > 0 ? bulatkanFraksiBEI(x.batas_invalidasi_sl) : bulatkanFraksiBEI(px * 0.88);
+
+            const epsText = x.eps_status || (
+              typeof base.eps_ttm === "number"
+                ? (base.eps_ttm > 0 ? `EPS TTM Positif (Rp ${base.eps_ttm})` : `EPS TTM ${base.eps_ttm} (Pantau Pemulihan)`)
+                : "Pantau Laporan Keuangan Terbaru"
+            );
+
+            return {
+              ticker: tk,
+              tanggal_call: targetEod,
+              jam_call: formatJamWIB(),
+              harga_close: px,
+              persen_naik: base.persen_naik,
+              nilai_transaksi_miliar: base.nilai_transaksi_miliar,
+              ret_1m_pct: base.ret_1m_pct,
+              ret_3m_pct: base.ret_3m_pct,
+              eps_ttm: base.eps_ttm,
+              per_ttm: base.per_ttm,
+              eps_status: epsText,
+              pilar_utama: x.pilar_utama || "EPS_GROWTH_CATALYST",
+              label_pilar: x.label_pilar || "Katalis Korporasi & Pertumbuhan EPS",
+              status_kelayakan: x.status_kelayakan || "ACCUMULATE WATCH",
+              skor_multibagger: Math.min(99, Math.max(50, Number(x.skor_multibagger || 76))),
+              katalis_korporasi: x.katalis_korporasi || "Teridentifikasi aktivitas korporasi dan prospek pertumbuhan kinerja jangka menengah.",
+              area_akumulasi_min: accMin,
+              area_akumulasi_max: accMax,
+              target_tp_25: tp25,
+              target_tp_50: tp50,
+              target_multibagger: tpMulti,
+              batas_invalidasi_sl: slInv,
+              horizon_estimasi: x.horizon_estimasi || "2 - 6 Bulan",
+              risiko_utama: x.risiko_utama || "Perubahan jadwal aksi korporasi, dilusi saham baru, dan volatilitas pasar."
+            };
+          });
+
+        const investmentPayload = {
+          tanggal_bursa: targetEod,
+          updated_at: new Date().toISOString(),
+          shock_halt: Boolean(macroResult.shock_halt),
+          macro_regime: macroResult.regime || "NORMAL",
+          macro_risk_score: macroResult.risk_score || 3,
+          ringkasan_strategi: aiInv?.ringkasan_strategi || "Seleksi saham berpotensi +50% hingga multibagger berbasis katalis akuisisi/backdoor, rights issue injeksi aset, dan pertumbuhan EPS.",
+          katalis_berita_terdeteksi: corpNewsForAI.slice(0, 5),
+          daftar_investment: daftarInvestment
+        };
+
+        await fbWrite("investment_signals", "PUT", investmentPayload);
+        console.log(`SUKSES FIREBASE: ${daftarInvestment.length} kandidat Investment (+50% / Multibagger) tersimpan.`);
+      } catch (e) {
+        console.warn("Modul Investment mengalami kendala:", e.message);
+        await logSystemError("WARNING", "INVESTMENT", "Gagal memperbarui data investment_signals", e.message);
+      }
+    }
+
     if (macroResult.shock_halt) {
       await fbWrite("bpjs_signals", "PUT", {
         tanggal_bursa: targetEod,
@@ -648,6 +883,16 @@ Balas HANYA JSON murni:
         funnel_tahap1: [],
         alasan_seleksi_ai: "Sinyal ditahan otomatis oleh Macro Risk Guard: " + macroResult.headline_utama
       });
+      await fbWrite("investment_signals", "PUT", {
+        tanggal_bursa: targetEod,
+        updated_at: new Date().toISOString(),
+        shock_halt: true,
+        macro_regime: macroResult.regime || "MARKET_SHOCK_HALT",
+        macro_risk_score: macroResult.risk_score || 8,
+        ringkasan_strategi: "Akumulasi jangka menengah ditahan sementara akibat guncangan makro: " + macroResult.headline_utama,
+        katalis_berita_terdeteksi: [],
+        daftar_investment: []
+      });
       await fbWrite("bpjs_meta", "PATCH", {
         quota_date: todayStr,
         ia_used_today: iaUsedToday,
@@ -656,6 +901,7 @@ Balas HANYA JSON murni:
         groq_calls_today: groqCallsToday,
         last_news_sync: new Date().toISOString(),
         last_signal_sync: new Date().toISOString(),
+        last_investment_sync: new Date().toISOString(),
         news_telemetry: newsTelemetryPayload
       });
       console.log("MARKET SHOCK HALT AKTIF.");
@@ -675,7 +921,24 @@ Balas HANYA JSON murni:
       return;
     }
 
-    // 4. FULL SCAN BPJS (08:00 WIB)
+    // Jalankan modul Investment (+50% – Multibagger) saat full scan / mode investment
+    await runInvestmentMultibaggerScan();
+
+    if (inputMode === "investment") {
+      await fbWrite("bpjs_meta", "PATCH", {
+        quota_date: todayStr,
+        ia_used_today: Math.min(5, iaUsedToday),
+        ia_limit_daily: 5,
+        groq_calls_today: groqCallsToday,
+        last_news_sync: new Date().toISOString(),
+        last_investment_sync: new Date().toISOString(),
+        news_telemetry: newsTelemetryPayload
+      });
+      console.log("Scan Investment selesai.");
+      return;
+    }
+
+    // 5. FULL SCAN BPJS (08:00 WIB)
     let tgl = targetEod;
 
     async function scanTradingView(agresif = true) {
@@ -752,16 +1015,6 @@ Balas HANYA JSON murni:
     const top5 = (sel?.terpilih || k1.slice(0, 5).map(x => x.ticker)).slice(0, 5);
     const alasanSeleksi = sel?.alasan_seleksi || "Dipilih berdasarkan lonjakan volume relatif tertinggi, momentum harga +2,5% ke atas, dan likuiditas aktif second-liner untuk BPJS.";
     k1.forEach(s => { s.dipilih_ai = top5.includes(s.ticker); });
-
-    function bulatkanFraksiBEI(harga) {
-      const h = Math.round(harga);
-      let f = 1;
-      if (h >= 5000) f = 25;
-      else if (h >= 2000) f = 10;
-      else if (h >= 500) f = 5;
-      else if (h >= 200) f = 2;
-      return Math.round(h / f) * f;
-    }
 
     const hasil = [];
     const brokerChecks = [];
@@ -898,6 +1151,7 @@ Balas HANYA JSON murni:
       groq_calls_today: groqCallsToday,
       last_news_sync: new Date().toISOString(),
       last_signal_sync: new Date().toISOString(),
+      last_investment_sync: new Date().toISOString(),
       bpjs_telemetry: {
         broker_checks: brokerChecks
       },
