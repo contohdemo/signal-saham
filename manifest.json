@@ -1,19 +1,32 @@
 {
+  "id": "./index.html",
   "name": "call you — STAR GROUP",
   "short_name": "call you",
-  "description": "Terminal Sinyal Saham & Radar Scalping Intraday — STAR GROUP",
+  "description": "Terminal Sinyal Saham, Radar Scalping Intraday, Investment (+50%) & Makro Global — STAR GROUP",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0A291C",
-  "theme_color": "#0A291C",
+  "background_color": "#090D16",
+  "theme_color": "#090D16",
   "icons": [
     {
-      "src": "Gemini_Generated_Image_dbfrdndbfrdndbfr.jpg",
+      "src": "./Gemini_Generated_Image_dbfrdndbfrdndbfr.jpeg",
+      "sizes": "192x192 512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "./Gemini_Generated_Image_dbfrdndbfrdndbfr.jpeg",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/jpeg",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./Gemini_Generated_Image_dbfrdndbfrdndbfr.jpg",
+      "sizes": "192x192 512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
     }
   ]
 }
