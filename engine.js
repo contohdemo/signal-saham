@@ -1,34 +1,72 @@
 (async () => {
-  try {
-    const DB = "https://signalsaham-9826a-default-rtdb.asia-southeast1.firebasedatabase.app";
-    const IA = "ia_live_" + "23UjBBj4A-L4YF1Iihbln-AJ";
-    const GR = "gsk_" + "WTfreY9SawK1JkdHWJm4WGdyb3FYfx49Jck1WFb0DGLjT26KwLbq";
+  const DB = "https://signalsaham-9826a-default-rtdb.asia-southeast1.firebasedatabase.app";
+  const IA = "ia_live_" + "23UjBBj4A-L4YF1Iihbln-AJ";
+  const GR = "gsk_" + "WTfreY9SawK1JkdHWJm4WGdyb3FYfx49Jck1WFb0DGLjT26KwLbq";
 
-    const BROWSER_HEADERS = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-      "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7"
-    };
+  const BROWSER_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7"
+  };
 
-    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-    async function fbWrite(path, method, data) {
-      const res = await fetch(`${DB}/${path}.json`, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+  function getWIB() {
+    return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+  }
+
+  function formatWaktuLogWIB(dateObj = new Date()) {
+    const tgl = dateObj.toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", day: "2-digit", month: "short" });
+    const jam = dateObj.toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" });
+    return `${tgl}, ${jam} WIB`;
+  }
+
+  function formatJamWIB(dateObj = new Date()) {
+    return dateObj.toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" }) + " WIB";
+  }
+
+  async function fbWrite(path, method, data) {
+    const res = await fetch(`${DB}/${path}.json`, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      throw new Error(`Firebase ${method} ${path} gagal (HTTP ${res.status}): ${errText}`);
+    }
+    return res.json().catch(() => null);
+  }
+
+  // Pencatat Error & Warning ke Firebase (Terbaca langsung di Admin Monitor)
+  async function logSystemError(level, modul, pesan, detail = "") {
+    try {
+      await fbWrite("bpjs_errors", "POST", {
+        level: String(level || "ERROR").toUpperCase(),
+        modul: String(modul || "SYSTEM").toUpperCase(),
+        pesan: String(pesan || "Terjadi kendala pada sistem."),
+        detail: String(detail || "").slice(0, 400),
+        waktu_wib: formatWaktuLogWIB(),
+        timestamp: Date.now()
       });
-      if (!res.ok) {
-        const errText = await res.text().catch(() => "");
-        throw new Error(`Firebase ${method} ${path} gagal (HTTP ${res.status}): ${errText}`);
+
+      // Jaga ukuran log maksimal 40 entri terbaru
+      const allErr = await fetch(`${DB}/bpjs_errors.json?shallow=true`).then(r => r.json()).catch(() => null);
+      if (allErr && typeof allErr === "object") {
+        const keys = Object.keys(allErr).sort();
+        if (keys.length > 40) {
+          const toDelete = keys.slice(0, keys.length - 40);
+          await Promise.all(
+            toDelete.map(k => fetch(`${DB}/bpjs_errors/${k}.json`, { method: "DELETE" }).catch(() => null))
+          );
+        }
       }
-      return res.json().catch(() => null);
+    } catch (e) {
+      console.warn("Gagal menulis log error ke Firebase:", e.message);
     }
+  }
 
-    function getWIB() {
-      return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
-    }
-
+  try {
     function getTglBursa(mundur = 0) {
       const wib = getWIB();
       const hari = wib.getDay();
@@ -163,7 +201,6 @@
       return "";
     }
 
-    // Fallback: cari thumbnail artikel via Bing News RSS berdasarkan judul berita
     async function findBingNewsThumbnail(title) {
       if (!title) return "";
       try {
@@ -238,6 +275,7 @@
     }
 
     const macroQuotes = [];
+    const failedMacro = [];
     for (const m of macroSymbols) {
       const fresh = await fetchYahooQuote(m.sym);
       if (fresh) {
@@ -246,9 +284,20 @@
           price: m.sym === "IDR=X" ? Math.round(fresh.price) : Number(fresh.price.toFixed(2)),
           change_pct: fresh.change_pct
         });
-      } else if (oldQuotesMap.has(m.name)) {
-        macroQuotes.push(oldQuotesMap.get(m.name));
+      } else {
+        failedMacro.push(m.name);
+        if (oldQuotesMap.has(m.name)) {
+          macroQuotes.push(oldQuotesMap.get(m.name));
+        }
       }
+    }
+    if (failedMacro.length > 0) {
+      await logSystemError(
+        "WARNING",
+        "NEWS",
+        `Sebagian indeks makro memakai data cache (${failedMacro.join(", ")})`,
+        "Endpoint Yahoo Finance mengalami pembatasan akses sementara."
+      );
     }
     console.log(`Makro quotes berhasil dimuat: ${macroQuotes.length}/${macroSymbols.length}`);
 
@@ -263,15 +312,21 @@
     ];
 
     let rawNews = [];
+    const rssSourceTelemetry = [];
+    const failedRssFeeds = [];
+
     for (const feed of rssUrls) {
       try {
         const resp = await fetch(feed.url, { headers: BROWSER_HEADERS });
         if (!resp.ok) {
           console.warn(`RSS ${feed.sumber} dilewati (HTTP ${resp.status})`);
+          failedRssFeeds.push(`${feed.sumber} (HTTP ${resp.status})`);
           continue;
         }
         const xml = await resp.text();
         const items = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
+        let validCount = 0;
+
         for (const item of items.slice(0, 5)) {
           const rawTitle = item.match(/<title>([\s\S]*?)<\/title>/i)?.[1] || "";
           const rawLink = item.match(/<link>([\s\S]*?)<\/link>/i)?.[1] || "";
@@ -291,6 +346,7 @@
 
           const link = cleanRedirectLink(rawLink);
           if (title && link && link.startsWith("http")) {
+            validCount++;
             rawNews.push({
               title,
               link,
@@ -302,12 +358,24 @@
             });
           }
         }
+        if (validCount > 0) {
+          rssSourceTelemetry.push({ name: feed.sumber, count: validCount });
+        }
       } catch (e) {
         console.warn(`RSS ${feed.sumber} gagal:`, e.message);
+        failedRssFeeds.push(`${feed.sumber} (${e.message})`);
       }
     }
 
-    // Urutkan dari berita paling baru berdasarkan pubDate
+    if (failedRssFeeds.length >= 3) {
+      await logSystemError(
+        "WARNING",
+        "NEWS",
+        `${failedRssFeeds.length} sumber RSS gagal diakses`,
+        failedRssFeeds.join(" | ")
+      );
+    }
+
     rawNews.sort((a, b) => (Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0));
 
     const seenTitles = new Set();
@@ -318,7 +386,6 @@
       return true;
     }).slice(0, 12);
 
-    // Lengkapi gambar dari og:image atau pencarian thumbnail Bing News jika masih kosong
     rawNews = await Promise.all(
       rawNews.map(async (item, idx) => {
         let img = item.image || "";
@@ -328,7 +395,6 @@
       })
     );
 
-    // Prioritaskan berita terbaru yang punya foto di urutan atas
     rawNews.sort((a, b) => {
       const imgDiff = (b.image ? 1 : 0) - (a.image ? 1 : 0);
       if (imgDiff !== 0) return imgDiff;
@@ -356,6 +422,7 @@
     }
 
     async function callGroqJSON(modelList, systemPrompt, userPayload, temperature = 0.15) {
+      let lastErrMsg = "no response";
       for (let attempt = 0; attempt < 2; attempt++) {
         const model = modelList[attempt % modelList.length];
         try {
@@ -375,7 +442,8 @@
 
           const content = res?.choices?.[0]?.message?.content;
           if (!content) {
-            console.warn(`Groq (${model}) gagal:`, res?.error?.message || "no response");
+            lastErrMsg = res?.error?.message || "no response";
+            console.warn(`Groq (${model}) gagal:`, lastErrMsg);
             await sleep(1500);
             continue;
           }
@@ -386,15 +454,18 @@
             return JSON.parse(cleaned.slice(start, end + 1));
           }
         } catch (e) {
+          lastErrMsg = e.message;
           console.warn(`Groq (${model}) error:`, e.message);
         }
         await sleep(1500);
       }
+      await logSystemError("WARNING", "API", "Groq AI gagal merespons (menggunakan fallback otomatis)", lastErrMsg);
       return null;
     }
 
     let modelList = null;
     let macroResult = newsOld;
+    let newsAiMode = "RSS Auto Fallback";
     const currentHash = rawNews.map(n => n.title.slice(0, 30)).join("|");
 
     if (rawNews.length > 0) {
@@ -427,6 +498,7 @@ Balas HANYA JSON murni:
 
       let finalBerita = [];
       if (parsedM && Array.isArray(parsedM.berita_valid) && parsedM.berita_valid.length > 0) {
+        newsAiMode = "Groq AI + RSS";
         finalBerita = parsedM.berita_valid.slice(0, 6).map((item, i) => {
           const matched =
             (typeof item.raw_id === "number" ? rawNews.find(r => r.id === item.raw_id) : null) ||
@@ -455,10 +527,6 @@ Balas HANYA JSON murni:
           gambar: r.image || ""
         }));
       }
-
-      finalBerita.forEach((b, idx) => {
-        console.log(`[IMG #${idx + 1}] ${b.judul.slice(0, 42)} -> ${b.gambar ? "ADA FOTO" : "KOSONG"}`);
-      });
 
       const ihsgQuote = macroQuotes.find(q => q.name === "IHSG");
       const defaultHeadline = ihsgQuote
@@ -489,10 +557,85 @@ Balas HANYA JSON murni:
       console.log(`SUKSES FIREBASE: ${finalBerita.length} berita terbaru tersimpan (${withImgCount} artikel punya foto).`);
     } else {
       console.warn("PERINGATAN: 0 artikel RSS berhasil diambil.");
+      await logSystemError(
+        "ERROR",
+        "NEWS",
+        "0 artikel berita berhasil diambil dari seluruh feed RSS",
+        failedRssFeeds.join(" | ") || "Tidak ada item RSS yang lolos filter."
+      );
       if (macroQuotes.length > 0) {
         await fbWrite("bpjs_news", "PATCH", { macro_quotes: macroQuotes, updated_at: new Date().toISOString() });
       }
     }
+
+    const newsTelemetryPayload = {
+      ai_mode: newsAiMode,
+      sources: rssSourceTelemetry
+    };
+
+    // 3. EVALUASI OTOMATIS RIWAYAT TP / SL (UNTUK WINRATE REKOMENDASI UTAMA)
+    async function evaluateHistoryTpSl() {
+      try {
+        const histObj = await fetch(`${DB}/bpjs_history.json`).then(r => r.json()).catch(() => null);
+        if (!histObj || typeof histObj !== "object") return;
+
+        const dateKeys = Object.keys(histObj).sort().slice(-7);
+        for (const callDate of dateKeys) {
+          if (callDate >= todayStr) continue; // Evaluasi hanya untuk call hari bursa sebelumnya
+          const entry = histObj[callDate];
+          if (!entry || !Array.isArray(entry.daftar_sinyal)) continue;
+
+          let changed = false;
+          for (const sig of entry.daftar_sinyal) {
+            if (!sig || !sig.ticker || sig.hasil) continue;
+            const tp = Number(sig.target_tp || 0);
+            const sl = Number(sig.cut_loss || 0);
+            if (tp <= 0 || sl <= 0) continue;
+
+            try {
+              const yUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sig.ticker + ".JK")}?range=7d&interval=1d`;
+              const yRes = await fetch(yUrl, { headers: { ...BROWSER_HEADERS, "Accept": "application/json" } }).then(r => r.json());
+              const r0 = yRes?.chart?.result?.[0];
+              if (!r0) continue;
+
+              const timestamps = r0.timestamp || [];
+              const highs = r0.indicators?.quote?.[0]?.high || [];
+              const lows = r0.indicators?.quote?.[0]?.low || [];
+
+              for (let idx = 0; idx < timestamps.length; idx++) {
+                const candleDate = new Date(timestamps[idx] * 1000).toISOString().slice(0, 10);
+                if (candleDate <= callDate) continue;
+
+                const hi = Number(highs[idx] || 0);
+                const lo = Number(lows[idx] || 0);
+                if (hi >= tp) {
+                  sig.hasil = "KENA TP (PROFIT)";
+                  sig.harga_exit = tp;
+                  sig.tgl_exit = candleDate;
+                  changed = true;
+                  break;
+                } else if (lo > 0 && lo <= sl) {
+                  sig.hasil = "KENA SL (CUT LOSS)";
+                  sig.harga_exit = sl;
+                  sig.tgl_exit = candleDate;
+                  changed = true;
+                  break;
+                }
+              }
+            } catch (_) {}
+          }
+
+          if (changed) {
+            await fbWrite(`bpjs_history/${callDate}/daftar_sinyal`, "PUT", entry.daftar_sinyal);
+            console.log(`Riwayat TP/SL tanggal ${callDate} diperbarui.`);
+          }
+        }
+      } catch (e) {
+        console.warn("Evaluasi TP/SL history dilewati:", e.message);
+      }
+    }
+
+    await evaluateHistoryTpSl();
 
     if (macroResult.shock_halt) {
       await fbWrite("bpjs_signals", "PUT", {
@@ -505,14 +648,15 @@ Balas HANYA JSON murni:
         funnel_tahap1: [],
         alasan_seleksi_ai: "Sinyal ditahan otomatis oleh Macro Risk Guard: " + macroResult.headline_utama
       });
-      await fbWrite("bpjs_meta", "PUT", {
+      await fbWrite("bpjs_meta", "PATCH", {
         quota_date: todayStr,
         ia_used_today: iaUsedToday,
         ia_limit_daily: 5,
         last_ia_eod: metaOld.last_ia_eod || "-",
         groq_calls_today: groqCallsToday,
         last_news_sync: new Date().toISOString(),
-        last_signal_sync: new Date().toISOString()
+        last_signal_sync: new Date().toISOString(),
+        news_telemetry: newsTelemetryPayload
       });
       console.log("MARKET SHOCK HALT AKTIF.");
       return;
@@ -524,13 +668,14 @@ Balas HANYA JSON murni:
         ia_used_today: iaUsedToday,
         ia_limit_daily: 5,
         groq_calls_today: groqCallsToday,
-        last_news_sync: new Date().toISOString()
+        last_news_sync: new Date().toISOString(),
+        news_telemetry: newsTelemetryPayload
       });
       console.log("Update berita & makro selesai.");
       return;
     }
 
-    // 4. FULL SCAN (08:00 WIB)
+    // 4. FULL SCAN BPJS (08:00 WIB)
     let tgl = targetEod;
 
     async function scanTradingView(agresif = true) {
@@ -586,6 +731,12 @@ Balas HANYA JSON murni:
 
     if (!k1.length) {
       console.log("Tidak ada kandidat saham dari scanner.");
+      await logSystemError(
+        "ERROR",
+        "BPJS",
+        "Scanner TradingView mengembalikan 0 kandidat saham",
+        "Cek konektivitas scanner.tradingview.com atau filter likuiditas BEI."
+      );
       return;
     }
     if (!modelList) modelList = await getGroqModels();
@@ -613,22 +764,38 @@ Balas HANYA JSON murni:
     }
 
     const hasil = [];
+    const brokerChecks = [];
+    const jamCallStr = formatJamWIB();
+
     for (let i = 0; i < top5.length; i++) {
       const tk = top5[i];
       const info = k1.find(x => x.ticker === tk);
       if (!info) continue;
 
       iaUsedToday++;
+      let brErrorDetail = "";
       let br = await fetch(`https://api.indexalpha.id/stocks/broker-summary?ticker=${tk}&from=${tgl}&to=${tgl}&investor=all&market=RG`, {
         headers: { "accept": "application/json", "Authorization": "Bearer " + IA }
-      }).then(r => r.json()).catch(() => null);
+      }).then(async r => {
+        if (!r.ok) brErrorDetail = `HTTP ${r.status}`;
+        return r.json();
+      }).catch(e => {
+        brErrorDetail = e.message;
+        return null;
+      });
 
       if ((!br || !br.success || !br.data?.length) && i === 0) {
         const prevTgl = getTglBursa(1);
         iaUsedToday++;
         br = await fetch(`https://api.indexalpha.id/stocks/broker-summary?ticker=${tk}&from=${prevTgl}&to=${prevTgl}&investor=all&market=RG`, {
           headers: { "accept": "application/json", "Authorization": "Bearer " + IA }
-        }).then(r => r.json()).catch(() => null);
+        }).then(async r => {
+          if (!r.ok) brErrorDetail = `HTTP ${r.status} (EOD ${prevTgl})`;
+          return r.json();
+        }).catch(e => {
+          brErrorDetail = e.message;
+          return null;
+        });
         if (br?.success && br.data?.length) tgl = prevTgl;
       }
 
@@ -656,9 +823,19 @@ Balas HANYA JSON murni:
 
         const fallbackStatus = dom3 >= 42 ? "BIG ACCUMULATION" : dom3 >= 30 ? "NORMAL ACCUMULATION" : "NEUTRAL";
         const fallbackSinyal = dom3 >= 35 ? "VALID BPJS" : dom3 >= 25 ? "WATCHLIST" : "AVOID";
+        const finalSinyal = v?.sinyal || fallbackSinyal;
+
+        brokerChecks.push({
+          ticker: tk,
+          status: "OK",
+          dom3,
+          sinyal: finalSinyal
+        });
 
         hasil.push({
           ...info,
+          tanggal_call: tgl,
+          jam_call: jamCallStr,
           dominasi_top3: dom3,
           buy_avg_bandar: avg1,
           selisih_modal_persen: Number((((info.harga_close - avg1) / avg1) * 100).toFixed(2)),
@@ -666,11 +843,25 @@ Balas HANYA JSON murni:
           target_tp: bulatkanFraksiBEI(info.harga_close * 1.03),
           cut_loss: bulatkanFraksiBEI(info.harga_close * 0.98),
           status_bandar: v?.status_bandar || fallbackStatus,
-          sinyal: v?.sinyal || fallbackSinyal,
+          sinyal: finalSinyal,
           alasan: v?.alasan || `Dominasi 3 pembeli teratas tercatat sebesar ${dom3}% dengan lonjakan volume ${info.lonjakan_volume}x dan rata-rata akumulasi di Rp ${avg1}.`,
           top_buyers: buyers,
           top_sellers: sellers
         });
+      } else {
+        const reasonDetail = br?.message || brErrorDetail || "Data broker summary kosong dari Index Alpha.";
+        brokerChecks.push({
+          ticker: tk,
+          status: "KOSONG",
+          dom3: 0,
+          sinyal: "SKIP"
+        });
+        await logSystemError(
+          "WARNING",
+          "BPJS",
+          `Data broker summary ${tk} (EOD ${tgl}) kosong / gagal ditarik`,
+          reasonDetail
+        );
       }
     }
 
@@ -690,20 +881,37 @@ Balas HANYA JSON murni:
       await fbWrite("bpjs_signals", "PUT", payload);
       await fbWrite(`bpjs_history/${tgl}`, "PUT", payload);
       console.log("Sinyal BPJS berhasil disimpan:", hasil.length, "emiten.");
+    } else {
+      await logSystemError(
+        "ERROR",
+        "BPJS",
+        `Tidak ada sinyal BPJS yang berhasil diproses untuk EOD ${tgl}`,
+        "Seluruh kandidat Top 5 gagal mendapatkan data broker summary."
+      );
     }
 
-    await fbWrite("bpjs_meta", "PUT", {
+    await fbWrite("bpjs_meta", "PATCH", {
       quota_date: todayStr,
       ia_used_today: Math.min(5, iaUsedToday),
       ia_limit_daily: 5,
       last_ia_eod: tgl,
       groq_calls_today: groqCallsToday,
       last_news_sync: new Date().toISOString(),
-      last_signal_sync: new Date().toISOString()
+      last_signal_sync: new Date().toISOString(),
+      bpjs_telemetry: {
+        broker_checks: brokerChecks
+      },
+      news_telemetry: newsTelemetryPayload
     });
     console.log("Full scan selesai.");
   } catch (err) {
     console.error("Engine Error:", err);
+    await logSystemError(
+      "ERROR",
+      "SYSTEM",
+      "Engine.js berhenti karena error tak terduga",
+      err?.stack || err?.message || String(err)
+    );
     process.exit(1);
   }
 })();
