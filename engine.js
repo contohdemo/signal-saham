@@ -425,25 +425,34 @@
     console.log(`Total berita RSS terkumpul: ${finalRawNews.length} artikel | Katalis korporasi: ${corporateNewsPool.length} | Dengan foto: ${finalRawNews.filter(x => x.image).length} artikel.`);
 
     async function getGroqModels() {
-      const modelsRes = await fetch("https://api.groq.com/openai/v1/models", {
-        headers: { "Authorization": "Bearer " + GR }
-      }).then(r => r.json()).catch(() => ({}));
-      const activeIds = (modelsRes.data || [])
-        .map(m => m.id)
-        .filter(id => !/whisper|guard|tts|embed|orpheus|playai|vision/i.test(id));
-      const preferred = [
-        "llama-3.3-70b-versatile",
-        "meta-llama/llama-4-maverick-17b-128e-instruct",
-        "meta-llama/llama-4-scout-17b-16e-instruct",
-        "qwen/qwen3-32b",
-        "llama-3.1-8b-instant"
-      ].filter(m => activeIds.includes(m));
-      return preferred.length > 0 ? preferred : ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
+      try {
+        const modelsRes = await fetch("https://api.groq.com/openai/v1/models", {
+          headers: { "Authorization": "Bearer " + GR }
+        }).then(r => r.json());
+        const activeIds = (modelsRes.data || [])
+          .map(m => m.id)
+          .filter(id => id && !/whisper|guard|tts|embed|orpheus|playai|vision|safeguard|prompt-guard|llama-3\.1-8b-instant/i.test(id));
+        const priorityPatterns = [
+          "llama-3.3-70b-versatile",
+          "meta-llama/llama-4-maverick-17b-128e-instruct",
+          "meta-llama/llama-4-scout-17b-16e-instruct",
+          "openai/gpt-oss-120b",
+          "qwen/qwen3-32b",
+          "openai/gpt-oss-20b",
+          "moonshotai/kimi-k2-instruct"
+        ];
+        const prioritized = priorityPatterns.filter(p => activeIds.includes(p));
+        const remaining = activeIds.filter(id => !prioritized.includes(id));
+        const combined = [...prioritized, ...remaining];
+        if (combined.length > 0) return combined;
+      } catch (_) {}
+      return ["llama-3.3-70b-versatile", "meta-llama/llama-4-scout-17b-16e-instruct", "qwen/qwen3-32b"];
     }
 
     async function callGroqJSON(modelList, systemPrompt, userPayload, temperature = 0.15) {
       let lastErrMsg = "no response";
-      for (let attempt = 0; attempt < 2; attempt++) {
+      const maxAttempts = Math.min(3, Math.max(1, modelList.length));
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
         const model = modelList[attempt % modelList.length];
         try {
           groqCallsToday++;
@@ -467,7 +476,10 @@
             await sleep(1500);
             continue;
           }
-          const cleaned = content.replace(/```json|```/g, "").trim();
+          const cleaned = content
+            .replace(/<think>[\s\S]*?<\/think>/gi, "")
+            .replace(/```json|```/g, "")
+            .trim();
           const start = cleaned.indexOf("{");
           const end = cleaned.lastIndexOf("}");
           if (start !== -1 && end !== -1) {
@@ -662,7 +674,6 @@ Balas HANYA JSON murni:
       try {
         if (!modelList) modelList = await getGroqModels();
 
-        // Cari kandidat emiten likuid + data EPS (jika tersedia di TradingView scanner)
         const baseCols = ["name", "close", "change", "Value.Traded", "relative_volume_10d_calc"];
         const epsCols = ["basic_eps_ttm", "earnings_per_share_diluted_ttm", "price_earnings_ttm"];
 
@@ -718,7 +729,6 @@ Balas HANYA JSON murni:
           return;
         }
 
-        // Ambil tren harga 1 bulan / 3 bulan dari Yahoo Finance untuk top 12 kandidat agar ada konteks struktur akumulasi menengah
         const enrichedCandidates = [];
         for (const cand of tvCandidates.slice(0, 12)) {
           let ret1m = null;
