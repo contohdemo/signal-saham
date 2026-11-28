@@ -31,19 +31,21 @@
 
     function decodeHtmlEntities(str) {
       return String(str || "")
+        .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
         .replace(/&amp;/g, "&")
         .replace(/&quot;/g, '"')
-        .replace(/&#39;|&apos;/g, "'")
+        .replace(/&#39;|&apos;|&#039;/g, "'")
         .replace(/&lt;/g, "<")
         .replace(/&gt;/g, ">")
+        .replace(/&nbsp;/g, " ")
         .replace(/\s+/g, " ")
         .trim();
     }
 
     function isValidNewsImage(url) {
       if (!url || typeof url !== "string" || !url.startsWith("http")) return false;
-      if (url.length < 18) return false;
-      return !/gstatic\.com|news\.google\.com|googleusercontent\.com\/proxy|favicon|J6_coFbogxhRI9iM864NL|logo-small|spacer\.gif|pixel\.gif|1x1/i.test(url);
+      if (url.length < 20) return false;
+      return !/gstatic\.com|news\.google\.com|favicon|J6_coFbogxhRI9iM864NL|logo-small|spacer\.gif|pixel\.gif|1x1|default-image/i.test(url);
     }
 
     function extractRssImage(itemXml) {
@@ -53,7 +55,7 @@
         /<media:content[^>]+url=["']([^"']+)["']/i,
         /<media:thumbnail[^>]+url=["']([^"']+)["']/i,
         /<image[^>]*>[\s\S]*?<url>([^<]+)<\/url>/i,
-        /<img[^>]+src=["']([^"']+)["']/i
+        /<img[^>]+(?:src|data-src)=["']([^"']+)["']/i
       ];
       for (const source of [itemXml, decodedXml]) {
         for (const re of patterns) {
@@ -68,57 +70,41 @@
       return "";
     }
 
-    // Decode link redirect Google News agar mengarah langsung ke URL media aslinya
-    async function resolveRealArticleUrl(url) {
-      if (!url || !url.includes("news.google.com")) return url;
-      try {
-        const parsed = new URL(url);
-        const parts = parsed.pathname.split("/").filter(Boolean);
-        const token = parts[parts.length - 1];
-        if (!token) return url;
+    function extractRssDescription(itemXml) {
+      const rawDesc =
+        itemXml.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/i)?.[1] ||
+        itemXml.match(/<description>([\s\S]*?)<\/description>/i)?.[1] ||
+        "";
+      const clean = decodeHtmlEntities(rawDesc.replace(/<[^>]+>/g, " "));
+      return clean.length > 220 ? clean.slice(0, 217) + "..." : clean;
+    }
 
-        // 1. Coba decode base64 langsung dari token URL Google News
-        try {
-          const b64 = token.replace(/-/g, "+").replace(/_/g, "/");
-          const buf = Buffer.from(b64, "base64").toString("latin1");
-          const found = buf.match(/https?:\/\/[^\x00-\x1f\x7f"'<>\\s]+/g);
-          if (found) {
-            const real = found.find(u => !u.includes("news.google.com") && !u.includes("gstatic.com"));
-            if (real) return real;
-          }
-        } catch (_) {}
+    function formatPubDateWIB(pubDate) {
+      if (!pubDate) return "Hari Ini";
+      const d = new Date(pubDate);
+      if (isNaN(d.getTime())) return pubDate.slice(0, 22);
+      const jam = d.toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" });
+      const tgl = d.toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", day: "2-digit", month: "short", year: "numeric" });
+      return `${jam} ${tgl}`;
+    }
 
-        // 2. Fallback via endpoint batchexecute Google News
-        const pageRes = await fetch(url, { headers: BROWSER_HEADERS, redirect: "follow" });
-        const pageHtml = await pageRes.text();
-        const sigMatch = pageHtml.match(/data-n-a-sg=["']([^"']+)["']/);
-        const tsMatch = pageHtml.match(/data-n-a-ts=["']([^"']+)["']/);
-        if (sigMatch && tsMatch) {
-          const payload = JSON.stringify([
-            [["Fbv4je", JSON.stringify(["garturlreq", [["X", "X", ["X", "X"], null, null, 1, 1, "US:en", null, 1, null, null, null, null, null, 0, 1], "X", "X", 1, [1, 1, 1], 1, 1, null, 0, 0, null, 0], token, Number(tsMatch[1]), sigMatch[1]]), null, "generic"]]
-          ]);
-          const batchRes = await fetch("https://news.google.com/_/DotsSplashUi/data/batchexecute", {
-            method: "POST",
-            headers: { ...BROWSER_HEADERS, "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-            body: "f.req=" + encodeURIComponent(payload)
-          });
-          const batchText = await batchRes.text();
-          const decodedUrlMatch = batchText.match(/\["garturlres","(https?:\\\/\\\/[^"]+)"/);
-          if (decodedUrlMatch && decodedUrlMatch[1]) {
-            return JSON.parse(`"${decodedUrlMatch[1]}"`);
-          }
-        }
-      } catch (_) {}
-      return url;
+    function classifyNewsSentiment(title, desc = "") {
+      const text = `${title} ${desc}`.toLowerCase();
+      if (/halt|anjlok|ambruk|krisis|resesi|perang|outflow besar|guncangan|turun tajam|melemah tajam/.test(text)) {
+        return "GUNCANGAN";
+      }
+      if (/menguat|borong|inflow|net buy|laba naik|dividen|rekor|surplus|melompat|bangkit|positif|tumbuh/.test(text)) {
+        return "POSITIF";
+      }
+      return "NETRAL";
     }
 
     async function fetchOgImage(articleUrl) {
       if (!articleUrl || !articleUrl.startsWith("http")) return "";
       try {
-        const realUrl = await resolveRealArticleUrl(articleUrl);
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 7000);
-        const resp = await fetch(realUrl, {
+        const timer = setTimeout(() => controller.abort(), 6500);
+        const resp = await fetch(articleUrl, {
           headers: BROWSER_HEADERS,
           redirect: "follow",
           signal: controller.signal
@@ -127,7 +113,7 @@
         if (!resp.ok) return "";
 
         const html = await resp.text();
-        const headSlice = html.slice(0, 100000);
+        const headSlice = html.slice(0, 120000);
         const metaPatterns = [
           /<meta[^>]+(?:property|name|itemprop)=["'](?:og:image|og:image:secure_url|og:image:url|twitter:image|twitter:image:src|image)["'][^>]+content=["']([^"']+)["']/i,
           /<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name|itemprop)=["'](?:og:image|og:image:secure_url|og:image:url|twitter:image|twitter:image:src|image)["']/i,
@@ -142,7 +128,7 @@
             let imgUrl = decodeHtmlEntities(m[1]);
             if (imgUrl.startsWith("//")) imgUrl = "https:" + imgUrl;
             else if (imgUrl.startsWith("/")) {
-              const base = new URL(resp.url || realUrl);
+              const base = new URL(resp.url || articleUrl);
               imgUrl = base.origin + imgUrl;
             }
             if (isValidNewsImage(imgUrl)) return imgUrl;
@@ -157,7 +143,6 @@
     const hariIni = wibNow.getDay();
     const isWeekday = hariIni >= 1 && hariIni <= 5;
     const inputMode = process.env.INPUT_MODE || "auto";
-    const isManualDispatch = process.env.GITHUB_EVENT_NAME === "workflow_dispatch";
 
     const metaOld = (await fetch(`${DB}/bpjs_meta.json`).then(r => r.json()).catch(() => ({}))) || {};
     const newsOld = (await fetch(`${DB}/bpjs_news.json`).then(r => r.json()).catch(() => ({}))) || {};
@@ -224,13 +209,13 @@
     }
     console.log(`Makro quotes berhasil dimuat: ${macroQuotes.length}/${macroSymbols.length}`);
 
-    // 2. TARIK RSS BERITA EKONOMI & PASAR MODAL + THUMBNAIL RSS
+    // 2. TARIK RSS MEDIA NASIONAL LANGSUNG (YANG MEMBAWA THUMBNAIL ASLI)
     const rssUrls = [
       { url: "https://www.cnbcindonesia.com/market/rss", sumber: "CNBC Indonesia" },
       { url: "https://investasi.kontan.co.id/rss", sumber: "Kontan Investasi" },
       { url: "https://www.antaranews.com/rss/ekonomi.xml", sumber: "ANTARA Ekonomi" },
       { url: "https://economy.okezone.com/rss", sumber: "Okezone Economy" },
-      { url: "https://news.google.com/rss/search?q=IHSG+OR+saham+OR+%22Bank+Indonesia%22+OR+rupiah+OR+BEI&hl=id&gl=ID&ceid=ID:id", sumber: "Google News Market" }
+      { url: "https://ekonomi.republika.co.id/rss", sumber: "Republika Ekonomi" }
     ];
 
     let rawNews = [];
@@ -243,22 +228,24 @@
         }
         const xml = await resp.text();
         const items = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
-        for (const item of items.slice(0, 6)) {
-          const rawTitle = item.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/)?.[1] || item.match(/<title>([\s\S]*?)<\/title>/)?.[1] || "";
-          const rawLink = item.match(/<link><!\[CDATA\[([\s\S]*?)\]\]><\/link>/)?.[1] || item.match(/<link>([\s\S]*?)<\/link>/)?.[1] || "";
-          const pubDate = (item.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1] || "").trim();
+        for (const item of items.slice(0, 5)) {
+          const rawTitle = item.match(/<title>([\s\S]*?)<\/title>/i)?.[1] || "";
+          const rawLink = item.match(/<link>([\s\S]*?)<\/link>/i)?.[1] || "";
+          const pubDate = (item.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1] || "").trim();
           const rssImage = extractRssImage(item);
+          const descText = extractRssDescription(item);
 
           const title = decodeHtmlEntities(rawTitle.replace(/<[^>]+>/g, ""));
           const link = decodeHtmlEntities(rawLink);
           if (title && link && link.startsWith("http")) {
             rawNews.push({
-              id: rawNews.length,
               title,
               link,
               pubDate,
+              waktu: formatPubDateWIB(pubDate),
               sumber: feed.sumber,
-              image: rssImage
+              image: rssImage,
+              desc: descText
             });
           }
         }
@@ -273,20 +260,24 @@
       if (seenTitles.has(key)) return false;
       seenTitles.add(key);
       return true;
-    }).slice(0, 15).map((n, idx) => ({ ...n, id: idx }));
+    }).slice(0, 12);
 
-    console.log(`Total berita RSS terkumpul: ${rawNews.length} artikel (RSS bawaan gambar: ${rawNews.filter(x => x.image).length}).`);
-
-    const currentHash = rawNews.map(n => n.title.slice(0, 30)).join("|");
-    const hasExistingNews = Array.isArray(newsOld.berita_valid) && newsOld.berita_valid.length > 0;
-    const oldMissingImages = hasExistingNews && newsOld.berita_valid.some(b => !b.gambar);
-    const hasNewHeadlines = rawNews.length > 0 && (
-      currentHash !== (newsOld.headline_hash || "") ||
-      !hasExistingNews ||
-      oldMissingImages ||
-      isManualDispatch ||
-      inputMode === "news_only"
+    // Lengkapi og:image untuk artikel RSS yang belum punya thumbnail
+    rawNews = await Promise.all(
+      rawNews.map(async (item, idx) => {
+        let img = item.image || "";
+        if (!img) {
+          img = await fetchOgImage(item.link);
+        }
+        return { ...item, id: idx, image: img };
+      })
     );
+
+    // Urutkan agar artikel yang memiliki foto asli diprioritaskan di atas
+    rawNews.sort((a, b) => (b.image ? 1 : 0) - (a.image ? 1 : 0));
+    rawNews = rawNews.map((item, idx) => ({ ...item, id: idx }));
+
+    console.log(`Total berita RSS: ${rawNews.length} artikel | Dengan foto asli: ${rawNews.filter(x => x.image).length} artikel.`);
 
     async function getGroqModels() {
       const modelsRes = await fetch("https://api.groq.com/openai/v1/models", {
@@ -306,7 +297,7 @@
     }
 
     async function callGroqJSON(modelList, systemPrompt, userPayload, temperature = 0.15) {
-      for (let attempt = 0; attempt < 3; attempt++) {
+      for (let attempt = 0; attempt < 2; attempt++) {
         const model = modelList[attempt % modelList.length];
         try {
           groqCallsToday++;
@@ -325,8 +316,8 @@
 
           const content = res?.choices?.[0]?.message?.content;
           if (!content) {
-            console.warn(`Percobaan ${attempt + 1} (${model}) tanpa choices:`, res?.error?.message || "rate limit");
-            await sleep(2500);
+            console.warn(`Groq (${model}) gagal:`, res?.error?.message || "no response");
+            await sleep(1500);
             continue;
           }
           const cleaned = content.replace(/```json|```/g, "").trim();
@@ -336,47 +327,38 @@
             return JSON.parse(cleaned.slice(start, end + 1));
           }
         } catch (e) {
-          console.warn(`Percobaan ${attempt + 1} (${model}) error:`, e.message);
+          console.warn(`Groq (${model}) error:`, e.message);
         }
-        await sleep(2500);
+        await sleep(1500);
       }
       return null;
     }
 
     let modelList = null;
     let macroResult = newsOld;
+    const currentHash = rawNews.map(n => n.title.slice(0, 30)).join("|");
 
-    if (hasNewHeadlines || (isFullRun && rawNews.length > 0)) {
+    if (rawNews.length > 0) {
       modelList = await getGroqModels();
-      const rawNewsForAI = rawNews.map(({ id, title, link, pubDate, sumber }) => ({ id, title, link, pubDate, sumber }));
+      const rawNewsForAI = rawNews.map(({ id, title, sumber, waktu, desc }) => ({ id, title, sumber, waktu, desc }));
 
       const parsedM = await callGroqJSON(
         modelList,
-        `Kamu adalah Kepala Riset Makro & Manajemen Risiko PT Bintang Ari Wibowo untuk bursa saham Indonesia (IHSG).
-Tugasmu:
-1. Evaluasi indeks global, USD/IDR, dan daftar berita terbaru secara cermat (abaikan berita promosi/klikbait). Jika hari libur/akhir pekan, sebutkan bahwa IHSG berada di posisi penutupan terakhir.
-2. Tentukan "risk_score" (1-10):
-  - 1-4: Pasar normal/kondusif.
-  - 5-7: Katalis positif kuat (bullish IHSG / inflow asing) atau kewaspadaan moderat.
-  - 8-10: GUNCANGAN SISTEMIK NYATA (contoh: pengumuman/rebalancing MSCI yang memicu outflow besar atau potensi trading halt IHSG, krisis perbankan/geopolitik akut, atau indeks global/Rupiah anjlok parah).
-3. Set "shock_halt": true HANYA JIKA risk_score >= 8 (terbukti valid ada guncangan besar yang berbahaya untuk entry pagi).
-4. Kurasi maksimal 6 berita paling valid & berdampak ke pasar dari daftar rawNews yang diberikan. Sertakan field "raw_id" sesuai "id" dari rawNews.
+        `Kamu adalah Kepala Riset Makro & Manajemen Risiko STAR GROUP untuk bursa saham Indonesia (IHSG).
+Kurasi maksimal 6 berita paling valid & berdampak ke pasar dari rawNews. Sertakan "raw_id" sesuai "id" dari rawNews.
 Balas HANYA JSON murni:
 {
   "risk_score": 3,
   "shock_halt": false,
   "regime": "NORMAL | BULLISH_CATALYST | CAUTION | MARKET_SHOCK_HALT",
   "headline_utama": "1 kalimat tajam kondisi makro saat ini",
-  "ringkasan_makro": "2-3 kalimat analisis valid mengapa pasar aman / bullish / sedang terguncang",
+  "ringkasan_makro": "2 kalimat analisis kondisi pasar global & domestik",
   "berita_valid": [
     {
       "raw_id": 0,
       "judul": "judul bersih",
-      "sumber": "nama media",
       "dampak": "GUNCANGAN | POSITIF | NETRAL",
-      "ringkasan": "1 kalimat dampak ke IHSG/sektor",
-      "link": "url asli",
-      "waktu": "jam/tanggal ringkas"
+      "ringkasan": "1 kalimat ringkasan dampak pasar"
     }
   ]
 }`,
@@ -384,69 +366,76 @@ Balas HANYA JSON murni:
         0.1
       );
 
+      let finalBerita = [];
       if (parsedM && Array.isArray(parsedM.berita_valid) && parsedM.berita_valid.length > 0) {
-        const beritaDenganGambar = await Promise.all(
-          parsedM.berita_valid.slice(0, 6).map(async (item) => {
-            const matchedRaw =
-              (typeof item.raw_id === "number" ? rawNews.find(r => r.id === item.raw_id) : null) ||
-              rawNews.find(r => r.link === item.link) ||
-              rawNews.find(r => r.title.toLowerCase().slice(0, 30) === String(item.judul || "").toLowerCase().slice(0, 30));
+        finalBerita = parsedM.berita_valid.slice(0, 6).map((item, i) => {
+          const matched =
+            (typeof item.raw_id === "number" ? rawNews.find(r => r.id === item.raw_id) : null) ||
+            rawNews.find(r => r.title.toLowerCase().slice(0, 30) === String(item.judul || "").toLowerCase().slice(0, 30)) ||
+            rawNews[i];
 
-            const linkFinal = matchedRaw?.link || item.link || "";
-            let gambar = matchedRaw?.image || "";
-            if (!gambar && linkFinal) {
-              gambar = await fetchOgImage(linkFinal);
-            }
-            console.log(`[IMG] ${String(item.judul || "").slice(0, 40)} -> ${gambar ? "OK (" + gambar.slice(0, 45) + "...)" : "KOSONG"}`);
-
-            return {
-              judul: item.judul || matchedRaw?.title || "",
-              sumber: item.sumber || matchedRaw?.sumber || "Berita Pasar",
-              dampak: item.dampak || "NETRAL",
-              ringkasan: item.ringkasan || "",
-              link: linkFinal,
-              waktu: item.waktu || matchedRaw?.pubDate || "",
-              gambar: gambar || ""
-            };
-          })
-        );
-
-        const jumlahGambar = beritaDenganGambar.filter(b => b.gambar).length;
-        console.log(`Thumbnail berita berhasil dimuat: ${jumlahGambar}/${beritaDenganGambar.length} artikel.`);
-
-        macroResult = {
-          updated_at: new Date().toISOString(),
-          headline_hash: currentHash,
-          macro_quotes: macroQuotes.length > 0 ? macroQuotes : (newsOld.macro_quotes || []),
-          risk_score: parsedM.risk_score || 3,
-          shock_halt: Boolean(parsedM.shock_halt) || (parsedM.risk_score >= 8),
-          regime: parsedM.regime || "NORMAL",
-          headline_utama: parsedM.headline_utama || "Kondisi makro terpantau stabil.",
-          ringkasan_makro: parsedM.ringkasan_makro || "Tidak terdeteksi guncangan sistemik pada pasar keuangan global maupun domestik.",
-          berita_valid: beritaDenganGambar
-        };
-
-        await fetch(`${DB}/bpjs_news.json`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(macroResult)
+          return {
+            judul: item.judul || matched?.title || "",
+            sumber: matched?.sumber || "Berita Pasar",
+            dampak: item.dampak || classifyNewsSentiment(matched?.title, matched?.desc),
+            ringkasan: item.ringkasan || matched?.desc || "Update sentimen pasar keuangan dan pergerakan bursa.",
+            link: matched?.link || "",
+            waktu: matched?.waktu || "Terkini",
+            gambar: matched?.image || ""
+          };
         });
-        console.log("Berita & Makro berhasil disimpan:", macroResult.berita_valid.length, "artikel.");
-      } else if (macroQuotes.length > 0) {
-        await fetch(`${DB}/bpjs_news.json`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ macro_quotes: macroQuotes, updated_at: new Date().toISOString() })
-        });
-        console.log("Parsing AI kosong, hanya quote makro yang diperbarui.");
+      } else {
+        // FALLBACK OTOMATIS TANPA AI: Tetap update berita & gambar ke Firebase meskipun Groq limit/revoked!
+        console.log("Menggunakan kurasi otomatis langsung dari RSS (tanpa ketergantungan AI).");
+        finalBerita = rawNews.slice(0, 6).map(r => ({
+          judul: r.title,
+          sumber: r.sumber,
+          dampak: classifyNewsSentiment(r.title, r.desc),
+          ringkasan: r.desc || `Laporan terbaru dari ${r.sumber} mengenai perkembangan pasar modal dan ekonomi.`,
+          link: r.link,
+          waktu: r.waktu,
+          gambar: r.image || ""
+        }));
       }
+
+      const ihsgQuote = macroQuotes.find(q => q.name === "IHSG");
+      const defaultHeadline = ihsgQuote
+        ? `IHSG berada di level ${ihsgQuote.price.toLocaleString("id-ID")} (${ihsgQuote.change_pct >= 0 ? "+" : ""}${ihsgQuote.change_pct}%) dengan pantauan ${finalBerita.length} katalis berita ekonomi terkini.`
+        : `Pemantauan ${finalBerita.length} berita ekonomi & pasar modal terkini telah diperbarui.`;
+
+      const defaultRingkasan = finalBerita[0]
+        ? `Sorotan utama pasar: ${finalBerita[0].judul} (${finalBerita[0].sumber}). Pantau pergerakan indeks global dan nilai tukar Rupiah sebelum eksekusi.`
+        : "Tidak terdeteksi guncangan sistemik pada pasar keuangan global maupun domestik.";
+
+      const hasShockNews = finalBerita.some(b => b.dampak === "GUNCANGAN");
+      const riskScore = parsedM?.risk_score || (hasShockNews ? 7 : 3);
+
+      macroResult = {
+        updated_at: new Date().toISOString(),
+        headline_hash: currentHash,
+        macro_quotes: macroQuotes.length > 0 ? macroQuotes : (newsOld.macro_quotes || []),
+        risk_score: riskScore,
+        shock_halt: Boolean(parsedM?.shock_halt) || (riskScore >= 8),
+        regime: parsedM?.regime || (hasShockNews ? "CAUTION" : "NORMAL"),
+        headline_utama: parsedM?.headline_utama || defaultHeadline,
+        ringkasan_makro: parsedM?.ringkasan_makro || defaultRingkasan,
+        berita_valid: finalBerita
+      };
+
+      await fetch(`${DB}/bpjs_news.json`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(macroResult)
+      });
+
+      const withImgCount = finalBerita.filter(b => b.gambar).length;
+      console.log(`SUKSES: ${finalBerita.length} berita terbaru disimpan (${withImgCount} kartu memiliki gambar).`);
     } else if (macroQuotes.length > 0) {
       await fetch(`${DB}/bpjs_news.json`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ macro_quotes: macroQuotes, updated_at: new Date().toISOString() })
       });
-      console.log("Headline belum berubah, quote makro diperbarui.");
     }
 
     if (macroResult.shock_halt) {
@@ -558,10 +547,10 @@ Balas HANYA JSON murni:
     }
     if (!modelList) modelList = await getGroqModels();
 
-    await sleep(1500);
+    await sleep(1000);
     const sel = await callGroqJSON(
       modelList,
-      "Analis kuantitatif BPJS BEI PT Bintang Ari Wibowo. Konteks makro: " + (macroResult.headline_utama || "Stabil") + ". Pilih TEPAT 5 saham lapis kedua/menengah dengan kombinasi lonjakan volume relatif tertinggi (>1.3x), momentum kenaikan sehat (+2.5% s/d +10%), dan likuiditas aktif untuk potensi lanjutan sesi pagi 09.00 WIB. Hindari emiten perbankan jumbo yang lambat. Balas JSON murni: {\"terpilih\":[\"T1\",\"T2\",\"T3\",\"T4\",\"T5\"],\"alasan_seleksi\":\"...\"}",
+      "Analis kuantitatif BPJS BEI STAR GROUP. Pilih TEPAT 5 saham lapis kedua/menengah dengan lonjakan volume relatif tertinggi (>1.3x), momentum kenaikan sehat (+2.5% s/d +10%), dan likuiditas aktif untuk potensi sesi pagi 09.00 WIB. Balas JSON murni: {\"terpilih\":[\"T1\",\"T2\",\"T3\",\"T4\",\"T5\"],\"alasan_seleksi\":\"...\"}",
       k1,
       0.2
     );
@@ -614,10 +603,10 @@ Balas HANYA JSON murni:
         const dom3 = totBuy > 0 ? Number(((buyers.slice(0, 3).reduce((a, b) => a + b.net_value, 0) / totBuy) * 100).toFixed(1)) : 0;
         const avg1 = buyers[0]?.buy_avg || info.harga_close;
 
-        await sleep(1500);
+        await sleep(1000);
         const v = await callGroqJSON(
           modelList,
-          "Analis bandarmologi institusional PT Bintang Ari Wibowo untuk eksekusi BPJS 09.00 WIB. Berikan 'VALID BPJS' jika dominasi top 3 buyer >= 35% dan akumulasi bersih lebih kuat dari distribusi; 'WATCHLIST' jika dominasi 25%-34% atau akumulasi moderat; 'AVOID' jika distribusi top seller lebih besar atau dominasi < 25%. Balas JSON murni: {\"status_bandar\":\"BIG ACCUMULATION|NORMAL ACCUMULATION|NEUTRAL|DISTRIBUTION\",\"sinyal\":\"VALID BPJS|WATCHLIST|AVOID\",\"alasan\":\"2 kalimat ringkas\"}",
+          "Analis bandarmologi institusional STAR GROUP untuk eksekusi BPJS 09.00 WIB. Berikan 'VALID BPJS' jika dominasi top 3 buyer >= 35%; 'WATCHLIST' jika 25%-34%; 'AVOID' jika < 25%. Balas JSON murni: {\"status_bandar\":\"BIG ACCUMULATION|NORMAL ACCUMULATION|NEUTRAL|DISTRIBUTION\",\"sinyal\":\"VALID BPJS|WATCHLIST|AVOID\",\"alasan\":\"2 kalimat ringkas\"}",
           { ...info, dom3, buyers, sellers, macro: macroResult.headline_utama || "Stabil" },
           0.2
         );
