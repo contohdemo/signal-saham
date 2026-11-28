@@ -61,9 +61,22 @@
       return !/gstatic\.com|news\.google\.com|googleusercontent\.com\/proxy|favicon|J6_coFbogxhRI9iM864NL|logo-small|spacer\.gif|pixel\.gif|1x1|default-image/i.test(url);
     }
 
+    function cleanRedirectLink(rawLink) {
+      const clean = decodeHtmlEntities(rawLink);
+      try {
+        if (clean.includes("bing.com/news/apiclick.aspx")) {
+          const u = new URL(clean);
+          const target = u.searchParams.get("url");
+          if (target && target.startsWith("http")) return target;
+        }
+      } catch (_) {}
+      return clean;
+    }
+
     function extractRssImage(itemXml) {
       const decodedXml = decodeHtmlEntities(itemXml);
       const patterns = [
+        /<News:Image[^>]*>([\s\S]*?)<\/News:Image>/i,
         /<enclosure[^>]+url=["']([^"']+)["']/i,
         /<media:content[^>]+url=["']([^"']+)["']/i,
         /<media:thumbnail[^>]+url=["']([^"']+)["']/i,
@@ -105,64 +118,18 @@
       if (/halt|anjlok|ambruk|krisis|resesi|perang|outflow besar|guncangan|turun tajam|melemah tajam/.test(text)) {
         return "GUNCANGAN";
       }
-      if (/menguat|borong|inflow|net buy|laba naik|dividen|rekor|surplus|melompat|bangkit|positif|tumbuh/.test(text)) {
+      if (/menguat|melesat|borong|inflow|net buy|laba naik|dividen|rekor|surplus|melompat|bangkit|positif|tumbuh/.test(text)) {
         return "POSITIF";
       }
       return "NETRAL";
     }
 
-    // Buka link terenkripsi Google News agar mengarah ke URL artikel media aslinya
-    async function resolveRealArticleUrl(url) {
-      if (!url || !url.includes("news.google.com")) return url;
-      try {
-        const parsed = new URL(url);
-        const parts = parsed.pathname.split("/").filter(Boolean);
-        const token = parts[parts.length - 1];
-        if (!token) return url;
-
-        // 1. Decode base64 langsung untuk format token CBMi...
-        try {
-          const b64 = token.replace(/-/g, "+").replace(/_/g, "/");
-          const buf = Buffer.from(b64, "base64").toString("latin1");
-          const found = buf.match(/https?:\/\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]+/g);
-          if (found) {
-            const real = found.find(u => !u.includes("news.google.com") && !u.includes("gstatic.com"));
-            if (real) return real;
-          }
-        } catch (_) {}
-
-        // 2. Fallback via endpoint batchexecute Google News untuk token AU_yqL...
-        const articlePageUrl = `https://news.google.com/articles/${token}`;
-        const pageRes = await fetch(articlePageUrl, { headers: BROWSER_HEADERS, redirect: "follow" });
-        const pageHtml = await pageRes.text();
-        const sigMatch = pageHtml.match(/data-n-a-sg=["']([^"']+)["']/);
-        const tsMatch = pageHtml.match(/data-n-a-ts=["']([^"']+)["']/);
-        if (sigMatch && tsMatch) {
-          const payload = JSON.stringify([
-            [["Fbv4je", JSON.stringify(["garturlreq", [["X", "X", ["X", "X"], null, null, 1, 1, "US:en", null, 1, null, null, null, null, null, 0, 1], "X", "X", 1, [1, 1, 1], 1, 1, null, 0, 0, null, 0], token, Number(tsMatch[1]), sigMatch[1]]), null, "generic"]]
-          ]);
-          const batchRes = await fetch("https://news.google.com/_/DotsSplashUi/data/batchexecute", {
-            method: "POST",
-            headers: { ...BROWSER_HEADERS, "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-            body: "f.req=" + encodeURIComponent(payload)
-          });
-          const batchText = await batchRes.text();
-          const decodedUrlMatch = batchText.match(/\["garturlres","(https?:\\\/\\\/[^"]+)"/);
-          if (decodedUrlMatch && decodedUrlMatch[1]) {
-            return JSON.parse(`"${decodedUrlMatch[1]}"`);
-          }
-        }
-      } catch (_) {}
-      return url;
-    }
-
     async function fetchOgImage(articleUrl) {
-      if (!articleUrl || !articleUrl.startsWith("http")) return "";
+      if (!articleUrl || !articleUrl.startsWith("http") || articleUrl.includes("news.google.com")) return "";
       try {
-        const realUrl = await resolveRealArticleUrl(articleUrl);
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 7000);
-        const resp = await fetch(realUrl, {
+        const timer = setTimeout(() => controller.abort(), 6500);
+        const resp = await fetch(articleUrl, {
           headers: BROWSER_HEADERS,
           redirect: "follow",
           signal: controller.signal
@@ -186,11 +153,29 @@
             let imgUrl = decodeHtmlEntities(m[1]);
             if (imgUrl.startsWith("//")) imgUrl = "https:" + imgUrl;
             else if (imgUrl.startsWith("/")) {
-              const base = new URL(resp.url || realUrl);
+              const base = new URL(resp.url || articleUrl);
               imgUrl = base.origin + imgUrl;
             }
             if (isValidNewsImage(imgUrl)) return imgUrl;
           }
+        }
+      } catch (_) {}
+      return "";
+    }
+
+    // Fallback: cari thumbnail artikel via Bing News RSS berdasarkan judul berita
+    async function findBingNewsThumbnail(title) {
+      if (!title) return "";
+      try {
+        const q = encodeURIComponent(title.slice(0, 80));
+        const url = `https://www.bing.com/news/search?q=${q}&setlang=id&cc=ID&format=rss`;
+        const resp = await fetch(url, { headers: BROWSER_HEADERS });
+        if (!resp.ok) return "";
+        const xml = await resp.text();
+        const items = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
+        for (const it of items.slice(0, 3)) {
+          const img = extractRssImage(it);
+          if (img) return img;
         }
       } catch (_) {}
       return "";
@@ -267,13 +252,14 @@
     }
     console.log(`Makro quotes berhasil dimuat: ${macroQuotes.length}/${macroSymbols.length}`);
 
-    // 2. GABUNGAN RSS MEDIA NASIONAL + GOOGLE NEWS RSS (ANTI-BLOKIR IP GITHUB ACTIONS)
+    // 2. BING NEWS RSS (BERGAMBAR) + RSS MEDIA LOKAL + GOOGLE NEWS RSS
     const rssUrls = [
+      { url: "https://www.bing.com/news/search?q=IHSG+saham+BEI&setlang=id&cc=ID&format=rss", sumber: "Berita Pasar" },
+      { url: "https://www.bing.com/news/search?q=ekonomi+Indonesia+Bank+Indonesia+rupiah&setlang=id&cc=ID&format=rss", sumber: "Ekonomi RI" },
       { url: "https://www.cnbcindonesia.com/market/rss", sumber: "CNBC Indonesia" },
       { url: "https://investasi.kontan.co.id/rss", sumber: "Kontan Investasi" },
       { url: "https://www.antaranews.com/rss/ekonomi.xml", sumber: "ANTARA Ekonomi" },
-      { url: "https://news.google.com/rss/search?q=IHSG+OR+saham+OR+BEI+when:2d&hl=id&gl=ID&ceid=ID:id", sumber: "Google News Saham" },
-      { url: "https://news.google.com/rss/search?q=%22Bank+Indonesia%22+OR+rupiah+OR+ekonomi+when:2d&hl=id&gl=ID&ceid=ID:id", sumber: "Google News Ekonomi" }
+      { url: "https://news.google.com/rss/search?q=IHSG+OR+saham+OR+BEI+when:2d&hl=id&gl=ID&ceid=ID:id", sumber: "Google News Saham" }
     ];
 
     let rawNews = [];
@@ -290,7 +276,11 @@
           const rawTitle = item.match(/<title>([\s\S]*?)<\/title>/i)?.[1] || "";
           const rawLink = item.match(/<link>([\s\S]*?)<\/link>/i)?.[1] || "";
           const pubDate = (item.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1] || "").trim();
-          const sourceTag = decodeHtmlEntities(item.match(/<source[^>]*>([\s\S]*?)<\/source>/i)?.[1] || "");
+          const sourceTag = decodeHtmlEntities(
+            item.match(/<News:Source[^>]*>([\s\S]*?)<\/News:Source>/i)?.[1] ||
+            item.match(/<source[^>]*>([\s\S]*?)<\/source>/i)?.[1] ||
+            ""
+          );
           const rssImage = extractRssImage(item);
           const descText = extractRssDescription(item);
 
@@ -299,7 +289,7 @@
             title = title.slice(0, -(` - ${sourceTag}`.length)).trim();
           }
 
-          const link = decodeHtmlEntities(rawLink);
+          const link = cleanRedirectLink(rawLink);
           if (title && link && link.startsWith("http")) {
             rawNews.push({
               title,
@@ -318,11 +308,7 @@
     }
 
     // Urutkan dari berita paling baru berdasarkan pubDate
-    rawNews.sort((a, b) => {
-      const ta = Date.parse(a.pubDate) || 0;
-      const tb = Date.parse(b.pubDate) || 0;
-      return tb - ta;
-    });
+    rawNews.sort((a, b) => (Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0));
 
     const seenTitles = new Set();
     rawNews = rawNews.filter(n => {
@@ -332,18 +318,17 @@
       return true;
     }).slice(0, 12);
 
-    // Ekstrak og:image dari 12 kandidat berita terbaru
+    // Lengkapi gambar dari og:image atau pencarian thumbnail Bing News jika masih kosong
     rawNews = await Promise.all(
       rawNews.map(async (item, idx) => {
         let img = item.image || "";
-        if (!img) {
-          img = await fetchOgImage(item.link);
-        }
+        if (!img) img = await fetchOgImage(item.link);
+        if (!img) img = await findBingNewsThumbnail(item.title);
         return { ...item, id: idx, image: img };
       })
     );
 
-    // Prioritaskan berita terbaru yang punya gambar di urutan atas
+    // Prioritaskan berita terbaru yang punya foto di urutan atas
     rawNews.sort((a, b) => {
       const imgDiff = (b.image ? 1 : 0) - (a.image ? 1 : 0);
       if (imgDiff !== 0) return imgDiff;
@@ -351,7 +336,7 @@
     });
     rawNews = rawNews.map((item, idx) => ({ ...item, id: idx }));
 
-    console.log(`Total berita RSS terkumpul: ${rawNews.length} artikel | Dengan foto asli: ${rawNews.filter(x => x.image).length} artikel.`);
+    console.log(`Total berita RSS terkumpul: ${rawNews.length} artikel | Dengan foto: ${rawNews.filter(x => x.image).length} artikel.`);
 
     async function getGroqModels() {
       const modelsRes = await fetch("https://api.groq.com/openai/v1/models", {
@@ -470,6 +455,10 @@ Balas HANYA JSON murni:
           gambar: r.image || ""
         }));
       }
+
+      finalBerita.forEach((b, idx) => {
+        console.log(`[IMG #${idx + 1}] ${b.judul.slice(0, 42)} -> ${b.gambar ? "ADA FOTO" : "KOSONG"}`);
+      });
 
       const ihsgQuote = macroQuotes.find(q => q.name === "IHSG");
       const defaultHeadline = ihsgQuote
