@@ -6,7 +6,7 @@
 
     const BROWSER_HEADERS = {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
       "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7"
     };
 
@@ -41,33 +41,84 @@
     }
 
     function isValidNewsImage(url) {
-      if (!url || !url.startsWith("http")) return false;
-      return !/gstatic\.com|news\.google\.com|favicon|J6_coFbogxhRI9iM864NL|logo-small/i.test(url);
+      if (!url || typeof url !== "string" || !url.startsWith("http")) return false;
+      if (url.length < 18) return false;
+      return !/gstatic\.com|news\.google\.com|googleusercontent\.com\/proxy|favicon|J6_coFbogxhRI9iM864NL|logo-small|spacer\.gif|pixel\.gif|1x1/i.test(url);
     }
 
     function extractRssImage(itemXml) {
+      const decodedXml = decodeHtmlEntities(itemXml);
       const patterns = [
         /<enclosure[^>]+url=["']([^"']+)["']/i,
         /<media:content[^>]+url=["']([^"']+)["']/i,
         /<media:thumbnail[^>]+url=["']([^"']+)["']/i,
+        /<image[^>]*>[\s\S]*?<url>([^<]+)<\/url>/i,
         /<img[^>]+src=["']([^"']+)["']/i
       ];
-      for (const re of patterns) {
-        const m = itemXml.match(re);
-        if (m && m[1]) {
-          const imgUrl = decodeHtmlEntities(m[1]);
-          if (isValidNewsImage(imgUrl)) return imgUrl;
+      for (const source of [itemXml, decodedXml]) {
+        for (const re of patterns) {
+          const m = source.match(re);
+          if (m && m[1]) {
+            let imgUrl = decodeHtmlEntities(m[1]);
+            if (imgUrl.startsWith("//")) imgUrl = "https:" + imgUrl;
+            if (isValidNewsImage(imgUrl)) return imgUrl;
+          }
         }
       }
       return "";
     }
 
+    // Decode link redirect Google News agar mengarah langsung ke URL media aslinya
+    async function resolveRealArticleUrl(url) {
+      if (!url || !url.includes("news.google.com")) return url;
+      try {
+        const parsed = new URL(url);
+        const parts = parsed.pathname.split("/").filter(Boolean);
+        const token = parts[parts.length - 1];
+        if (!token) return url;
+
+        // 1. Coba decode base64 langsung dari token URL Google News
+        try {
+          const b64 = token.replace(/-/g, "+").replace(/_/g, "/");
+          const buf = Buffer.from(b64, "base64").toString("latin1");
+          const found = buf.match(/https?:\/\/[^\x00-\x1f\x7f"'<>\\s]+/g);
+          if (found) {
+            const real = found.find(u => !u.includes("news.google.com") && !u.includes("gstatic.com"));
+            if (real) return real;
+          }
+        } catch (_) {}
+
+        // 2. Fallback via endpoint batchexecute Google News
+        const pageRes = await fetch(url, { headers: BROWSER_HEADERS, redirect: "follow" });
+        const pageHtml = await pageRes.text();
+        const sigMatch = pageHtml.match(/data-n-a-sg=["']([^"']+)["']/);
+        const tsMatch = pageHtml.match(/data-n-a-ts=["']([^"']+)["']/);
+        if (sigMatch && tsMatch) {
+          const payload = JSON.stringify([
+            [["Fbv4je", JSON.stringify(["garturlreq", [["X", "X", ["X", "X"], null, null, 1, 1, "US:en", null, 1, null, null, null, null, null, 0, 1], "X", "X", 1, [1, 1, 1], 1, 1, null, 0, 0, null, 0], token, Number(tsMatch[1]), sigMatch[1]]), null, "generic"]]
+          ]);
+          const batchRes = await fetch("https://news.google.com/_/DotsSplashUi/data/batchexecute", {
+            method: "POST",
+            headers: { ...BROWSER_HEADERS, "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+            body: "f.req=" + encodeURIComponent(payload)
+          });
+          const batchText = await batchRes.text();
+          const decodedUrlMatch = batchText.match(/\["garturlres","(https?:\\\/\\\/[^"]+)"/);
+          if (decodedUrlMatch && decodedUrlMatch[1]) {
+            return JSON.parse(`"${decodedUrlMatch[1]}"`);
+          }
+        }
+      } catch (_) {}
+      return url;
+    }
+
     async function fetchOgImage(articleUrl) {
       if (!articleUrl || !articleUrl.startsWith("http")) return "";
       try {
+        const realUrl = await resolveRealArticleUrl(articleUrl);
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 5000);
-        const resp = await fetch(articleUrl, {
+        const timer = setTimeout(() => controller.abort(), 7000);
+        const resp = await fetch(realUrl, {
           headers: BROWSER_HEADERS,
           redirect: "follow",
           signal: controller.signal
@@ -76,10 +127,13 @@
         if (!resp.ok) return "";
 
         const html = await resp.text();
-        const headSlice = html.slice(0, 60000);
+        const headSlice = html.slice(0, 100000);
         const metaPatterns = [
-          /<meta[^>]+(?:property|name)=["'](?:og:image|og:image:secure_url|twitter:image|twitter:image:src)["'][^>]+content=["']([^"']+)["']/i,
-          /<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image|og:image:secure_url|twitter:image|twitter:image:src)["']/i
+          /<meta[^>]+(?:property|name|itemprop)=["'](?:og:image|og:image:secure_url|og:image:url|twitter:image|twitter:image:src|image)["'][^>]+content=["']([^"']+)["']/i,
+          /<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name|itemprop)=["'](?:og:image|og:image:secure_url|og:image:url|twitter:image|twitter:image:src|image)["']/i,
+          /<link[^>]+rel=["']image_src["'][^>]+href=["']([^"']+)["']/i,
+          /"image"\s*:\s*\[\s*"(https?:\/\/[^"]+)"/i,
+          /"image"\s*:\s*\{\s*"@type"\s*:\s*"ImageObject"\s*,\s*"url"\s*:\s*"(https?:\/\/[^"]+)"/i
         ];
 
         for (const re of metaPatterns) {
@@ -88,7 +142,7 @@
             let imgUrl = decodeHtmlEntities(m[1]);
             if (imgUrl.startsWith("//")) imgUrl = "https:" + imgUrl;
             else if (imgUrl.startsWith("/")) {
-              const base = new URL(resp.url || articleUrl);
+              const base = new URL(resp.url || realUrl);
               imgUrl = base.origin + imgUrl;
             }
             if (isValidNewsImage(imgUrl)) return imgUrl;
@@ -100,24 +154,22 @@
 
     const wibNow = getWIB();
     const todayStr = wibNow.toISOString().slice(0, 10);
-    const hariIni = wibNow.getDay(); // 0 = Minggu, 6 = Sabtu
+    const hariIni = wibNow.getDay();
     const isWeekday = hariIni >= 1 && hariIni <= 5;
     const inputMode = process.env.INPUT_MODE || "auto";
     const isManualDispatch = process.env.GITHUB_EVENT_NAME === "workflow_dispatch";
 
-    // Cek metadata kuota & data lama di Firebase
     const metaOld = (await fetch(`${DB}/bpjs_meta.json`).then(r => r.json()).catch(() => ({}))) || {};
     const newsOld = (await fetch(`${DB}/bpjs_news.json`).then(r => r.json()).catch(() => ({}))) || {};
     const targetEod = getTglBursa(0);
 
     const sudahScanEodIni = metaOld.last_ia_eod === targetEod && (metaOld.ia_used_today || 0) > 0;
-    // Full scan (kuota Index Alpha 5x/hari) hanya jalan jam 08:00 WIB hari kerja atau mode 'full'
     const isFullRun = inputMode === "full" || (isWeekday && wibNow.getHours() === 8 && !sudahScanEodIni && inputMode === "auto");
 
     let groqCallsToday = metaOld.quota_date === todayStr ? (metaOld.groq_calls_today || 0) : 0;
     let iaUsedToday = metaOld.quota_date === todayStr ? (metaOld.ia_used_today || 0) : 0;
 
-    // 1. TARIK DATA MAKRO GLOBAL & KURS (Multi-endpoint + Fallback Data Lama)
+    // 1. TARIK DATA MAKRO GLOBAL & KURS
     const macroSymbols = [
       { sym: "^JKSE", name: "IHSG" },
       { sym: "IDR=X", name: "USD/IDR" },
@@ -177,6 +229,7 @@
       { url: "https://www.cnbcindonesia.com/market/rss", sumber: "CNBC Indonesia" },
       { url: "https://investasi.kontan.co.id/rss", sumber: "Kontan Investasi" },
       { url: "https://www.antaranews.com/rss/ekonomi.xml", sumber: "ANTARA Ekonomi" },
+      { url: "https://economy.okezone.com/rss", sumber: "Okezone Economy" },
       { url: "https://news.google.com/rss/search?q=IHSG+OR+saham+OR+%22Bank+Indonesia%22+OR+rupiah+OR+BEI&hl=id&gl=ID&ceid=ID:id", sumber: "Google News Market" }
     ];
 
@@ -199,7 +252,14 @@
           const title = decodeHtmlEntities(rawTitle.replace(/<[^>]+>/g, ""));
           const link = decodeHtmlEntities(rawLink);
           if (title && link && link.startsWith("http")) {
-            rawNews.push({ title, link, pubDate, sumber: feed.sumber, image: rssImage });
+            rawNews.push({
+              id: rawNews.length,
+              title,
+              link,
+              pubDate,
+              sumber: feed.sumber,
+              image: rssImage
+            });
           }
         }
       } catch (e) {
@@ -213,15 +273,17 @@
       if (seenTitles.has(key)) return false;
       seenTitles.add(key);
       return true;
-    }).slice(0, 15);
+    }).slice(0, 15).map((n, idx) => ({ ...n, id: idx }));
 
-    console.log(`Total berita RSS terkumpul: ${rawNews.length} artikel.`);
+    console.log(`Total berita RSS terkumpul: ${rawNews.length} artikel (RSS bawaan gambar: ${rawNews.filter(x => x.image).length}).`);
 
     const currentHash = rawNews.map(n => n.title.slice(0, 30)).join("|");
     const hasExistingNews = Array.isArray(newsOld.berita_valid) && newsOld.berita_valid.length > 0;
+    const oldMissingImages = hasExistingNews && newsOld.berita_valid.some(b => !b.gambar);
     const hasNewHeadlines = rawNews.length > 0 && (
       currentHash !== (newsOld.headline_hash || "") ||
       !hasExistingNews ||
+      oldMissingImages ||
       isManualDispatch ||
       inputMode === "news_only"
     );
@@ -286,7 +348,7 @@
 
     if (hasNewHeadlines || (isFullRun && rawNews.length > 0)) {
       modelList = await getGroqModels();
-      const rawNewsForAI = rawNews.map(({ title, link, pubDate, sumber }) => ({ title, link, pubDate, sumber }));
+      const rawNewsForAI = rawNews.map(({ id, title, link, pubDate, sumber }) => ({ id, title, link, pubDate, sumber }));
 
       const parsedM = await callGroqJSON(
         modelList,
@@ -298,7 +360,7 @@ Tugasmu:
   - 5-7: Katalis positif kuat (bullish IHSG / inflow asing) atau kewaspadaan moderat.
   - 8-10: GUNCANGAN SISTEMIK NYATA (contoh: pengumuman/rebalancing MSCI yang memicu outflow besar atau potensi trading halt IHSG, krisis perbankan/geopolitik akut, atau indeks global/Rupiah anjlok parah).
 3. Set "shock_halt": true HANYA JIKA risk_score >= 8 (terbukti valid ada guncangan besar yang berbahaya untuk entry pagi).
-4. Kurasi maksimal 6 berita paling valid & berdampak ke pasar dari daftar rawNews yang diberikan.
+4. Kurasi maksimal 6 berita paling valid & berdampak ke pasar dari daftar rawNews yang diberikan. Sertakan field "raw_id" sesuai "id" dari rawNews.
 Balas HANYA JSON murni:
 {
   "risk_score": 3,
@@ -308,6 +370,7 @@ Balas HANYA JSON murni:
   "ringkasan_makro": "2-3 kalimat analisis valid mengapa pasar aman / bullish / sedang terguncang",
   "berita_valid": [
     {
+      "raw_id": 0,
       "judul": "judul bersih",
       "sumber": "nama media",
       "dampak": "GUNCANGAN | POSITIF | NETRAL",
@@ -322,24 +385,27 @@ Balas HANYA JSON murni:
       );
 
       if (parsedM && Array.isArray(parsedM.berita_valid) && parsedM.berita_valid.length > 0) {
-        // Lengkapi setiap berita terpilih dengan gambar dari RSS atau og:image halaman artikel
         const beritaDenganGambar = await Promise.all(
           parsedM.berita_valid.slice(0, 6).map(async (item) => {
-            const matchedRaw = rawNews.find(
-              r => r.link === item.link || r.title.toLowerCase().slice(0, 35) === String(item.judul || "").toLowerCase().slice(0, 35)
-            );
-            const linkFinal = item.link || matchedRaw?.link || "";
+            const matchedRaw =
+              (typeof item.raw_id === "number" ? rawNews.find(r => r.id === item.raw_id) : null) ||
+              rawNews.find(r => r.link === item.link) ||
+              rawNews.find(r => r.title.toLowerCase().slice(0, 30) === String(item.judul || "").toLowerCase().slice(0, 30));
+
+            const linkFinal = matchedRaw?.link || item.link || "";
             let gambar = matchedRaw?.image || "";
             if (!gambar && linkFinal) {
               gambar = await fetchOgImage(linkFinal);
             }
+            console.log(`[IMG] ${String(item.judul || "").slice(0, 40)} -> ${gambar ? "OK (" + gambar.slice(0, 45) + "...)" : "KOSONG"}`);
+
             return {
               judul: item.judul || matchedRaw?.title || "",
               sumber: item.sumber || matchedRaw?.sumber || "Berita Pasar",
               dampak: item.dampak || "NETRAL",
               ringkasan: item.ringkasan || "",
               link: linkFinal,
-              waktu: item.waktu || "",
+              waktu: item.waktu || matchedRaw?.pubDate || "",
               gambar: gambar || ""
             };
           })
